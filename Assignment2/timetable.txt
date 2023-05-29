@@ -1,0 +1,6 @@
+title,day,start,end,location
+"Gym",Mon,07:00AM,07:30AM
+"Gym2",Mon,08:00AM,07:30PM
+"Gym",Tue,07:00AM,07:30PM
+"Gym",Wed,07:00AM,07:30PM
+"Event4",Thu,09:00AM,10:30AM,"Where"
