@@ -41,7 +41,7 @@ def display_title():
     """Display author info and program title"""
     print("Author: Nhat Minh Ngo")
     print("Email ID: ngony007")
-    print("WEEKLY TIMETABLE")
+    print("WEEKLY TIMETABLE MANAGER")
 
 
 def get_choice() -> int:
@@ -75,24 +75,55 @@ def create_event(timetable: list[dict[str, str]]):
     print("Create new event")
     title = input("Title: ")
     location = input("Location (optional): ")
-    day = _ask_day()
-    start = input("Start: ")
-    end = input("End: ")
+    day = _ask_day("Day: ")
+    start = _ask_time("Start (e.g: 7:30am): ")
+    end = _ask_time("End (e.g: 9:30pm): ")
 
-    # timetable.append(event)  # type: ignore
+    event = {"title": title, "day": day, "start": start, "end": end}
+    if location:
+        event["location"] = location
 
-def _parse_time(txt) -> str:
-    # TODO: split string by ; and try looking for AM/PM, convert hour and minute to int and compare in range
-    pass
+    timetable.append(event)
 
-def _ask_start() -> str:
+
+def _parse_time(txt: str) -> str:
+    """Parse time in HH:mmAM/PM format, return empty string if invalid input"""
+    txt = txt.strip()
+    try:
+        # Check for AM/PM
+        period = txt[-2:].lower()
+        if period not in ["am", "pm"]:
+            return ""
+
+        # Get hour and minute
+        match txt[:-2].split(":"):
+            case (hh, mm):
+                hh, mm = (hh, mm)
+            case (hh,):
+                hh = hh
+                mm = "00"
+            case _:
+                return ""
+
+        # Compare hour and minute in range
+        if not (0 <= int(hh) <= 12 and 0 <= int(mm) <= 59):
+            return ""
+
+        return f"{hh.rjust(2,'0')}:{mm.rjust(2,'0')}{period}"
+
+    except Exception:
+        return ""
+
+
+def _ask_time(prompt: str) -> str:
     while True:
-        start = input("Start: ")
-        if 
+        if time := _parse_time(input(prompt)):
+            return time
 
-def _ask_day() -> str:
+
+def _ask_day(prompt) -> str:
     while True:
-        day = input("Day: ")
+        day = input(prompt)
         if _validate_day(day):
             return day
 
@@ -137,7 +168,7 @@ def edit_event(timetable: dict[str, list[dict[str, str]]]):
     """Edit existing event, prompt user for start time"""
     event = _find_event(timetable)
     if not event:
-        print
+        ...
     while True:
         choice = input(
             "Select field to edit: Title, Day, Start time, End time, location or quit?"
@@ -149,7 +180,7 @@ def print_timetable(timetable):
     pass
 
 
-def _check_availability(day: str, start: str, end: str) -> bool:
+def _check_availability(day: str, start: str, end: str) -> bool:  # type: ignore
     """Check event against existing timetable"""
     pass
 
@@ -170,4 +201,5 @@ def load_timetable(filename: str) -> list[dict[str, str]]:
     return timetable
 
 
-main()
+if __name__ == "__main__":
+    main()
