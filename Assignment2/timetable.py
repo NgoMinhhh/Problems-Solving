@@ -84,6 +84,7 @@ def create_event(timetable: list[dict[str, str]]):
         event["location"] = location
 
     timetable.append(event)
+    print("New Event Created.")
 
 
 def _parse_time(txt: str) -> str:
@@ -199,6 +200,25 @@ def load_timetable(filename: str) -> list[dict[str, str]]:
     except FileNotFoundError:
         return []
     return timetable
+
+
+def do_again(func):
+    """Decorator for asking back to menu or continue with chosen action"""
+
+    def wrapper(*args, **kwargs):
+        # Do action first
+        func(*args, **kwargs)
+
+        while True:
+            choice = input("Option: \n0. Back to Menu\n1. Continue\n")
+            if choice == "0":
+                return
+            elif choice == "1":
+                func(*args, **kwargs)
+            else:
+                print("Invalid input! Please choose again.")
+
+    return wrapper
 
 
 if __name__ == "__main__":
