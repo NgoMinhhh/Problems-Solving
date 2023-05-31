@@ -49,7 +49,7 @@ def get_choice() -> int:
     options = [
         "Quit",
         "Create new event",
-        "Update event",
+        "Edit event",
         "Delete event",
         "Print timetable",
         "Print all events in selected day",
@@ -85,6 +85,41 @@ def create_event(timetable: list[dict[str, str]]):
 
     timetable.append(event)
     print("New Event Created.")
+
+
+def edit_event(timetable: dict[str, list[dict[str, str]]]):
+    """Edit existing event, prompt user for start time"""
+    event = _find_event(timetable)
+    if not event:
+        print("No event found!")
+        return
+    while True:
+        field = input("Field to edit: ").lower()
+        match field:
+            case "title" | "location" as key:
+                event[key] = input("New value: ")
+            case "day":
+                ...
+
+
+def print_timetable(timetable):
+    pass
+
+
+def load_timetable(filename: str) -> list[dict[str, str]]:
+    """Load timetable data from text file into list of dict"""
+    # TODO: Escape comma in title and location field
+    timetable = []
+    try:
+        with open(filename, "r") as f:
+            lines = f.read().splitlines()
+            headers = lines[0].split(",")
+            for line in lines[1:]:
+                data = line.split(",")
+                timetable.append({headers[i]: data[i] for i in range(len(data))})
+    except FileNotFoundError:
+        return []
+    return timetable
 
 
 def _parse_time(txt: str) -> str:
@@ -124,12 +159,12 @@ def _ask_time(prompt: str) -> str:
 
 def _ask_day(prompt) -> str:
     while True:
-        day = input(prompt)
-        if _validate_day(day):
+        day = input(prompt).lower()
+        if _is_day(day):
             return day
 
 
-def _validate_day(txt: str) -> bool:
+def _is_day(txt: str) -> bool:
     valid_days = [
         "monday",
         "mon",
@@ -154,10 +189,10 @@ def _validate_day(txt: str) -> bool:
 def _find_event(timetable) -> dict[str, str] | None:
     """Find event based on user input"""
     while True:
-        day = input("Day ?")
+        day = _ask_day("Day ?")
         if not timetable.get(day):
             continue
-        start = input("Start time ?")
+        start = _ask_time("Start time ?")
         for event in timetable[day]:
             if event["Start"] == start:
                 return event
@@ -165,41 +200,12 @@ def _find_event(timetable) -> dict[str, str] | None:
             return None
 
 
-def edit_event(timetable: dict[str, list[dict[str, str]]]):
-    """Edit existing event, prompt user for start time"""
-    event = _find_event(timetable)
-    if not event:
-        ...
-    while True:
-        choice = input(
-            "Select field to edit: Title, Day, Start time, End time, location or quit?"
-        )
+def _is_available(timetable, day: str, start: str, end: str) -> bool:
+    """Check day time availability against existing timetable"""
+    if not timetable:
+        return True
+
     pass
-
-
-def print_timetable(timetable):
-    pass
-
-
-def _check_availability(day: str, start: str, end: str) -> bool:  # type: ignore
-    """Check event against existing timetable"""
-    pass
-
-
-def load_timetable(filename: str) -> list[dict[str, str]]:
-    """Load timetable data from text file into list of dict"""
-    # TODO: Escape comma in title and location field
-    timetable = []
-    try:
-        with open(filename, "r") as f:
-            lines = f.read().splitlines()
-            headers = lines[0].split(",")
-            for line in lines[1:]:
-                data = line.split(",")
-                timetable.append({headers[i]: data[i] for i in range(len(data))})
-    except FileNotFoundError:
-        return []
-    return timetable
 
 
 def do_again(func):
