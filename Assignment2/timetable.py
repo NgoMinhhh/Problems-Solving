@@ -24,18 +24,20 @@ def main():
     # TODO: delete after implementing save and load functions
     timetable = load_timetable(r"Assignment2\timetable.txt")
 
-    choice = get_choice()
-    match choice:
-        case 0:
-            print("Good Bye!")
-            return
-        case 1:
-            create_event(timetable)
-        case 2:
-            # edit_event(timetable)
-            pass
-    pprint(timetable)
-
+    while True:
+        choice = get_choice()
+        match choice:
+            case 0:
+                print("Good Bye!")
+                return
+            case 1:
+                create_event(timetable)
+            case 2:
+                # edit_event(timetable)
+                pass
+            case 4:
+                pprint(timetable)
+        print()
 
 def display_title():
     """Display author info and program title"""
@@ -83,10 +85,12 @@ def create_event(timetable: list[dict[str, str]]):
     if location:
         event["location"] = location
 
-    timetable.append(event)
-    print("New Event Created.")
-
-
+    if _is_available(timetable,event):
+        timetable.append(event)
+        print("New Event Created.")
+    else:
+        print("Can't Add Event")
+        
 def edit_event(timetable: dict[str, list[dict[str, str]]]):
     """Edit existing event, prompt user for start time"""
     event = _find_event(timetable)
@@ -99,7 +103,7 @@ def edit_event(timetable: dict[str, list[dict[str, str]]]):
             case "title" | "location" as key:
                 event[key] = input("New value: ")
             case "day":
-                ...
+                
 
 
 def print_timetable(timetable):
@@ -116,7 +120,7 @@ def load_timetable(filename: str) -> list[dict[str, str]]:
             headers = lines[0].split(",")
             for line in lines[1:]:
                 data = line.split(",")
-                timetable.append({headers[i]: data[i] for i in range(len(data))})
+                timetable.append({headers[i]: data[i].lower() for i in range(len(data))})
     except FileNotFoundError:
         return []
     return timetable
@@ -200,12 +204,26 @@ def _find_event(timetable) -> dict[str, str] | None:
             return None
 
 
-def _is_available(timetable, day: str, start: str, end: str) -> bool:
+def _is_available(timetable, event:dict[str,str]) -> bool:
     """Check day time availability against existing timetable"""
+    # TODO: Convert time to 24h format and do int comparison
     if not timetable:
         return True
 
-    pass
+    new_start, new_end = [_convert_time(t) for t in (event['start'],event['end'])] 
+    day_events = [new_e for new_e in timetable if new_e["day"].lower() == event["day"]]
+    for event in day_events:
+        old_start, old_end = [_convert_time(t) for t in (event["start"], event["end"])]
+        if old_start <= new_start <= old_end or old_start <=new_end <= old_end:
+            return False
+    return True
+
+
+def _convert_time(time: str) -> int:
+    hh, mm = [t.strip() for t in time[:-2].split(":")]
+    if time[-2:] == "pm" and (hh := int(hh) <= 12):
+        hh += 12
+    return int(f"{hh}{mm}")
 
 
 def do_again(func):
