@@ -3,7 +3,7 @@ def main():
 
     while True:
         print("==== Timetable Management ====")
-        print("1. Create Event")
+        print("1. Create New Event")
         # print("2. Update Event")
         # print("3. Delete Event")
         # print("4. Print Timetable")
@@ -15,20 +15,17 @@ def main():
             case '0':
                 return
             case '1':
-                create_event(timetable)
+                create_event()
             case _:
                 continue
         print()
 
-def create_event(timetable: list[dict[str,str]]) -> None:
+def create_event() -> dict[str,str] | None:
     """Create valid event"""
     # Ask title
     if not(title := input("Title: ")):
         print("Title can not be empty!")
         return
-    
-    # Ask Loc
-    location = input("Location (optional): ")
 
     # Ask day
     day = input("Day (e.g. monday, tue): ")
@@ -40,7 +37,15 @@ def create_event(timetable: list[dict[str,str]]) -> None:
     start = input("Time start (e.g. 7am, 10:30pm): ")
     end = input("Time end (e.g. 7pm, 10:30am): ")
 
+    # Ask Loc
+    if location := input("Location (optional): "):
+        return {'title':title,'day':day,'start':start,'end':end,'location':location}
+    
+    # Return dict with no loc key to match interface of dict[str,str]
+    return {'title':title,'day':day,'start':start,'end':end}
+
 def _is_day(day:str) -> bool:
+    """Validate day input"""
     if day.lower().strip() in ["monday",
         "mon",
         "tuesday",
@@ -58,5 +63,7 @@ def _is_day(day:str) -> bool:
         return True
     return False
 
+def _parse_time(time:str) -> str:
+    pass
 if __name__ == '__main__':
     main()
