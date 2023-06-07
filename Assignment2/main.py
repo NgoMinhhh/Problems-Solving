@@ -30,10 +30,33 @@ def create_event(timetable: list[dict[str,str]]) -> None:
     # Ask Loc
     location = input("Location (optional): ")
 
-    # Ask day & time
+    # Ask day
     day = input("Day (e.g. monday, tue): ")
+    if not(_is_day(day)):
+        print('Day is not valid')
+        return
+    
+    # Ask time
     start = input("Time start (e.g. 7am, 10:30pm): ")
     end = input("Time end (e.g. 7pm, 10:30am): ")
+
+def _is_day(day:str) -> bool:
+    if day.lower().strip() in ["monday",
+        "mon",
+        "tuesday",
+        "tue",
+        "wednesday",
+        "wed",
+        "thursday",
+        "thu",
+        "friday",
+        "fri",
+        "saturday",
+        "sat",
+        "sunday",
+        "sun"]:
+        return True
+    return False
 
 if __name__ == '__main__':
     main()
