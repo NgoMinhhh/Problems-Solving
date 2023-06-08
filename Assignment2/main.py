@@ -110,5 +110,16 @@ def _parse_time(time: str) -> str:
         return ""
 
 
+def _convert_time(time: str) -> int | None:
+    """Convert time formatted as HH:mm am/pm into int for numeric comparison"""
+    try:
+        hh, mm = [t.strip() for t in time[:-2].split(":")]
+        if time[-2:] == "pm" and (hh := int(hh) <= 12):
+            hh += 12
+        return int(f"{hh}{mm}")
+    except Exception:
+        return None
+
+
 if __name__ == "__main__":
     main()
