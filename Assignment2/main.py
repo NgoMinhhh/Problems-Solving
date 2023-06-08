@@ -7,7 +7,7 @@ def main():
     while True:
         print("==== Timetable Management ====")
         print("1. Create New Event")
-        # print("2. Update Event")
+        print("2. Update Event")
         # print("3. Delete Event")
         print("4. Print Timetable")
         # print("5. Print Events on Day")
@@ -24,10 +24,8 @@ def main():
                         timetable.append(event)
                     else:
                         print("Event is in the timeframe of another one")
-            # case "2":
-            #     if event := _find_event(prompt):
-            #         new_event = create_event()
-            #         event = new_event
+            case "2":
+                update_event(timetable)
             case "4":
                 pprint(timetable)
             case "9":
@@ -188,9 +186,9 @@ def _find_events(timetable: list[dict[str, str]], **kwargs) -> list[dict[str, st
     return events
 
 
-def edit_event(timetable: list[dict[str, str]]) -> None:
+def update_event(timetable: list[dict[str, str]]) -> None:
     # Ask day
-    day = input("Day (e.g. monday, tue): ")
+    day = input("Day (e.g. monday, tue): ").lower()
     if not (_is_day(day)):
         print("Invalid input! Wrong format")
         return
@@ -203,35 +201,60 @@ def edit_event(timetable: list[dict[str, str]]) -> None:
 
     try:
         event = _find_events(timetable, day=day, start=start)[0]
+        timetable.remove(event)
     except IndexError:
         print("No event found!")
         return
 
-    while True:
-        field = input("Field to edit: ").lower()
-        val = input("New value: ")
-        match field:
-            case "title" | "location" as key:
-                event[key] = val
-            case "day":
-                if 
+    new_title = input("New Title (Skip if not change): ") or event["title"]
+    new_day = input("New Day (Skip if not change): ") or event["day"]
+    new_start = (
+        _parse_time(input("New Time Start (Skip if not change): ")) or event["start"]
+    )
+    new_end = _parse_time(input("New Time End (Skip if not change): ")) or event["end"]
+    new_loc = input("New Location (Skip if not change): ") or event.get("location")
+
+    new_event = {"title": new_title, "day": new_day, "start": new_start, "end": new_end}
+    if new_loc:
+        new_event["location"] = new_loc
+
+    if _is_available(timetable, new_event):
+        timetable.append(new_event)
+        print("Event updated succesfully")
+    else:
+        timetable.append(event)
+        print("Event not updated")
+    return
 
 
 def _edit_field(
     timetable: list[dict[str, str]], event: dict[str, str], **kwargs
-) -> None:
-    while True:
-        match kwargs:
-            case {"title": val}:
-                timetable[timetable.index(event)]["title"] = val
-                print("Title is edited")
-                return
-            case {"location": val}:
-                timetable[timetable.index(event)]["location"] = val
-                print("Location is edited")
-                return
-            case {"day": day}:
-                return
+) -> dict[str, str]:
+    match kwargs:
+        case {"title": val}:
+            event["title"] = val
+            print("Title is edited")
+            return {"title": val}
+        case {"location": val}:
+            event["location"] = val
+            print("Location is edited")
+            return {"location": val}
+        case {"day": day}:
+            new_event = event.copy()
+            new_event.update(day=day)
+            if _is_available(timetable, new_event):
+                print("Day is edited")
+                event["day"] = day
+                return {"day": day}
+            else:
+                print("There is another event scheduled in the same timeframe!")
+                choice = input("Do you want to update new time (y/n)? ").lower()
+                if choice != "y":
+                    return _edit_field(timetable, event, day=day, start=None, end=None)
+        case {
+            "day": day,
+        }:
+            ...
 
 
 if __name__ == "__main__":
