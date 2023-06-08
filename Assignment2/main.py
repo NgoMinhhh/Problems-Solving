@@ -1,3 +1,6 @@
+from pprint import pprint
+
+
 def main():
     timetable: list[dict[str, str]] = []
 
@@ -6,7 +9,7 @@ def main():
         print("1. Create New Event")
         # print("2. Update Event")
         # print("3. Delete Event")
-        # print("4. Print Timetable")
+        print("4. Print Timetable")
         # print("5. Print Events on Day")
         # print("6. Save Timetable")
         print("0. Quit")
@@ -15,7 +18,10 @@ def main():
             case "0":
                 return
             case "1":
-                create_event()
+                if event := create_event():
+                    timetable.append(event)
+            case "4":
+                pprint(timetable)
             case _:
                 continue
         print()
@@ -31,18 +37,23 @@ def create_event() -> dict[str, str] | None:
     # Ask day
     day = input("Day (e.g. monday, tue): ")
     if not (_is_day(day)):
-        print("Day is not valid")
+        print("Invalid input! Wrong format")
         return
 
     # Ask time
     start = _parse_time(input("Time start (e.g. 7am, 10:30pm): "))
     if not start:
-        print("Time is not valid")
+        print("Invalid input! Wrong format")
         return
 
     end = _parse_time(input("Time end (e.g. 7pm, 10:30am): "))
     if not end:
-        print("Time is not valid")
+        print("Invalid input! Wrong format")
+        return
+
+    # Check if end time is later than start time
+    if _convert_time(start) >= _convert_time(end):
+        print("Invalid input! End time must be later than start time")
         return
 
     # Ask Loc
