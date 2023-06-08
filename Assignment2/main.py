@@ -132,5 +132,32 @@ def _convert_time(time: str) -> int | None:
         return None
 
 
+def _is_available(timetable: list[dict[str, str]], new_event: dict[str, str]) -> bool:
+    """Check availability by comparing start, end time of the new event against all events in the same day"""
+
+    # Does not need to proceed if timetable is empty
+    if len(timetable) == 0:
+        return True
+
+    # Get list of events in the same day and return if it is empty
+    same_day_events = [e for e in timetable if e["day"] == new_event["day"]]
+    if len(same_day_events) == 0:
+        return True
+
+    # Convert to comparison-enabled time format for new event
+    new_start, new_end = [
+        _convert_time(t) for t in (new_event["start"], new_event["end"])
+    ]
+
+    for old_event in same_day_events:
+        old_start = _convert_time(old_event["start"])
+        old_end = _convert_time(old_event["end"])
+        # New Event cannot start or end in existing event's timeframe
+        if old_start <= new_start <= old_end or old_start <= new_end <= old_end:
+            return False
+
+    return True
+
+
 if __name__ == "__main__":
     main()
