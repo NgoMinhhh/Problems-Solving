@@ -132,5 +132,22 @@ def _convert_time(time: str) -> int | None:
         return None
 
 
+def _find_events(timetable: list[dict[str, str]], **kwargs) -> list[dict[str, str]]:
+    match kwargs:
+        case {"day": day, "start": start}:
+            events = [
+                event
+                for event in timetable
+                if event["start"] == start and event["day"] == day
+            ]
+        # case {'title': title}:
+        #     ...
+        # case {'location': loc}:
+        #     ...
+        case _:
+            events = []
+    return events
+
+
 if __name__ == "__main__":
     main()
