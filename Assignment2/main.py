@@ -19,7 +19,10 @@ def main():
                 return
             case "1":
                 if event := create_event():
-                    timetable.append(event)
+                    if _is_available(timetable, event):
+                        timetable.append(event)
+                    else:
+                        print("Event is in the timeframe of another one")
             # case "2":
             #     if event := _find_event(prompt):
             #         new_event = create_event()
