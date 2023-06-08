@@ -13,6 +13,7 @@ def main():
         # print("5. Print Events on Day")
         # print("6. Save Timetable")
         print("0. Quit")
+        print("9. test")
         choice = input("Enter your choice: ")
         match choice:
             case "0":
@@ -22,6 +23,11 @@ def main():
                     timetable.append(event)
             case "4":
                 pprint(timetable)
+            case "9":
+                day = input("Day: ")
+                start = _parse_time(input("Time: "))
+                events = _find_events(timetable, day=day, start=start)
+                _edit_field(timetable, events[0], location="s")
             case _:
                 continue
         print()
@@ -135,6 +141,8 @@ def _convert_time(time: str) -> int | None:
 def _find_events(timetable: list[dict[str, str]], **kwargs) -> list[dict[str, str]]:
     match kwargs:
         case {"day": day, "start": start}:
+            # Should find one event only and return a one-item list to match interface
+            # Or return an empty list
             events = [
                 event
                 for event in timetable
@@ -147,6 +155,52 @@ def _find_events(timetable: list[dict[str, str]], **kwargs) -> list[dict[str, st
         case _:
             events = []
     return events
+
+
+def edit_event(timetable: list[dict[str, str]]) -> None:
+    # Ask day
+    day = input("Day (e.g. monday, tue): ")
+    if not (_is_day(day)):
+        print("Invalid input! Wrong format")
+        return
+
+    # Ask time
+    start = _parse_time(input("Time start (e.g. 7am, 10:30pm): "))
+    if not start:
+        print("Invalid input! Wrong format")
+        return
+
+    try:
+        event = _find_events(timetable, day=day, start=start)[0]
+    except IndexError:
+        print("No event found!")
+        return
+
+    while True:
+        field = input("Field to edit: ").lower()
+        val = input("New value: ")
+        match field:
+            case "title" | "location" as key:
+                event[key] = val
+            case "day":
+                if 
+
+
+def _edit_field(
+    timetable: list[dict[str, str]], event: dict[str, str], **kwargs
+) -> None:
+    while True:
+        match kwargs:
+            case {"title": val}:
+                timetable[timetable.index(event)]["title"] = val
+                print("Title is edited")
+                return
+            case {"location": val}:
+                timetable[timetable.index(event)]["location"] = val
+                print("Location is edited")
+                return
+            case {"day": day}:
+                return
 
 
 if __name__ == "__main__":
