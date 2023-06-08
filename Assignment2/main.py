@@ -20,6 +20,10 @@ def main():
             case "1":
                 if event := create_event():
                     timetable.append(event)
+            # case "2":
+            #     if event := _find_event(prompt):
+            #         new_event = create_event()
+            #         event = new_event
             case "4":
                 pprint(timetable)
             case _:
@@ -121,15 +125,12 @@ def _parse_time(time: str) -> str:
         return ""
 
 
-def _convert_time(time: str) -> int | None:
+def _convert_time(time: str) -> int:
     """Convert time formatted as HH:mm am/pm into int for numeric comparison"""
-    try:
-        hh, mm = [t.strip() for t in time[:-2].split(":")]
-        if time[-2:] == "pm" and (hh := int(hh) <= 12):
-            hh += 12
-        return int(f"{hh}{mm}")
-    except Exception:
-        return None
+    hh, mm = [t.strip() for t in time[:-2].split(":")]
+    if time[-2:] == "pm" and (hh := int(hh) <= 12):
+        hh += 12
+    return int(f"{hh}{mm}")
 
 
 def _is_available(timetable: list[dict[str, str]], new_event: dict[str, str]) -> bool:
