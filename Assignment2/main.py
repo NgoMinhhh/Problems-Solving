@@ -10,8 +10,9 @@ def main():
         print("2. Update Event")
         # print("3. Delete Event")
         print("4. Print Timetable")
-        # print("5. Print Events on Day")
+        print("5. Print Events on Day")
         # print("6. Save Timetable")
+        print("7. Load timetable data")
         print("0. Quit")
         print("9. test")
         choice = input("Enter your choice: ")
@@ -28,6 +29,14 @@ def main():
                 update_event(timetable)
             case "4":
                 pprint(timetable)
+            case "5":
+                print_events(timetable)
+            case "7":
+                timetable = load_timetable(r"Assignment2\timetable.txt")
+                if timetable:
+                    print("Data load successfully!")
+                else:
+                    print("Load Data failed!")
             case "9":
                 day = input("Day: ")
                 start = _parse_time(input("Time: "))
@@ -277,6 +286,32 @@ def save_timetable(timetable: list[dict[str, str]], filename: str) -> None:
 
         # Write data
         f.writelines(["\,".join(event.values()) + "\n" for event in timetable])
+
+
+def print_events(events: list[dict[str, str]]) -> None:
+    """Print events in table format"""
+    print(f"Events in {events[0]['day']}:")
+    print("-" * 79)
+    # Print Header
+    print(
+        "|{:^20}|{:^11}|{:^11}|{:^11}|{:^20}|".format(
+            "TITLE", "DAY", "START", "END", "LOCATION"
+        )
+    )
+    print("-" * 79)
+    # Print Data
+    for event in events:
+        print(
+            "|{title:20}|{day:^11}|{start:^11}|{end:^11}|{location:20}|".format(
+                title=event["title"],
+                day=event["day"].capitalize(),
+                start=event["start"],
+                end=event["end"],
+                location=event["location"][:20],
+            )
+        )
+
+    print("-" * 79)
 
 
 if __name__ == "__main__":
