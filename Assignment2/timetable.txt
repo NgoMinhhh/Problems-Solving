@@ -1,5 +1,8 @@
 title\,day\,start\,end\,location
-Gym,03\,Mon\,07:00am\,08:00am\,
-Class 1\,Mon,08:00am\,08:30am\,
-Gym\,Tue\,07:00am\,07:30pm\,
-Gym\,Wed\,07:00am\,07:30pm\,
+Gym\,mon\,07:00am\,08:00am\,UniSA City West
+Class 1\,tue\,10:00am\,01:30pm\,Mawson Lake
+Gym\,wed\,07:00am\,07:30pm\,UniSA City West
+Class 2\,tue\,12:00am\,04:30pm\,Mawson Lake
+Gym\,fri\,07:00am\,07:30pm\,UniSA City West
+Badminton\,sat\,08:00am\,10:00am\,Badminton Court
+Dinner with Babe\,sun\,06:00pm\,07:30pm\,Windy Point
