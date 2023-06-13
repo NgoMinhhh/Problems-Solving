@@ -1,6 +1,5 @@
-title,day,start,end,location
-"Gym",Mon,07:00AM,07:30AM
-"Gym2",Mon,08:00AM,08:30AM
-"Gym",Tue,07:00AM,07:30PM
-"Gym",Wed,07:00AM,07:30PM
-"Event4",Thu,09:00AM,10:30AM,"Where"
+title\,day\,start\,end\,location
+Gym,03\,Mon\,07:00am\,08:00am\,
+Class 1\,Mon,08:00am\,08:30am\,
+Gym\,Tue\,07:00am\,07:30pm\,
+Gym\,Wed\,07:00am\,07:30pm\,

@@ -257,5 +257,27 @@ def _edit_field(
             ...
 
 
+def load_timetable(filename: str) -> list[dict[str, str]]:
+    """Load timetable from txt file and return empty list if fail"""
+    with open(filename, "r") as f:
+        lines = f.read().splitlines()
+        headers = lines[0].split("\,")
+        tb = [
+            {headers[i]: val for i, val in enumerate(line.split("\,"))}
+            for line in lines[1:]
+        ]
+    return tb
+
+
+def save_timetable(timetable: list[dict[str, str]], filename: str) -> None:
+    """Save timetable into txt file, separator is \, for each field"""
+    with open(filename, "w", encoding="utf-8") as f:
+        # Write Headers
+        f.write("\,".join(timetable[0].keys()) + "\n")
+
+        # Write data
+        f.writelines(["\,".join(event.values()) + "\n" for event in timetable])
+
+
 if __name__ == "__main__":
     main()
