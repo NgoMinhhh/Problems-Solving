@@ -210,7 +210,6 @@ def update_event(timetable: list[dict[str, str]]) -> None:
 
     try:
         event = _find_events(timetable, day=day, start=start)[0]
-        timetable.remove(event)
     except IndexError:
         print("No event found!")
         return
@@ -227,6 +226,8 @@ def update_event(timetable: list[dict[str, str]]) -> None:
     if new_loc:
         new_event["location"] = new_loc
 
+    # Remove said event from loop
+    timetable.remove(event)
     if _is_available(timetable, new_event):
         timetable.append(new_event)
         print("Event updated succesfully")

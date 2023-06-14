@@ -1,5 +1,6 @@
 title\,day\,start\,end\,location
 Gym\,mon\,07:00am\,08:00am\,UniSA City West
+Gym2\,mon\,07:00am\,08:00am\,UniSA City West
 Class 1\,tue\,10:00am\,01:30pm\,Mawson Lake
 Gym\,wed\,07:00am\,07:30pm\,UniSA City West
 Class 2\,tue\,12:00am\,04:30pm\,Mawson Lake
