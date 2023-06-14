@@ -314,5 +314,9 @@ def print_events(events: list[dict[str, str]]) -> None:
     print("-" * 79)
 
 
+def print_timetable(timetable, mode: str = "12") -> None:
+    pass
+
+
 if __name__ == "__main__":
     main()
