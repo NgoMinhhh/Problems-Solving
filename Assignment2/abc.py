@@ -1,9 +1,9 @@
 from pprint import pprint
-from main import load_timetable, _convert_time, _parse_time
+from main import load_timetable, _convert_time, _parse_time, _find_events
 from itertools import pairwise
 
 TIMETABLE = load_timetable(r"Assignment2\timetable.txt")
-TEMPLATE = "{:7}|{:^10}|{:^10}|{:^10}|{:^10}|{:^10}|{:^10}|{:^10}"
+TEMPLATE = "{:5}|{:10}|{:10}|{:10}|{:10}|{:10}|{:10}|{:9}"
 
 
 def print_draft():
@@ -27,8 +27,13 @@ def print_draft():
         print(TEMPLATE.format(*[""] * 8))
 
 
-def print_header(template: str) -> None:
-    print(template.format("", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"))
+def print_header() -> None:
+    print(
+        "{:5}|{:^10}|{:^10}|{:^10}|{:^10}|{:^10}|{:^10}|{:^9}".format(
+            "", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
+        )
+    )
+    print("-" * 80)
 
 
 def print_afterhour_event(template: str, events: list[dict[str, str]]) -> None:
@@ -45,36 +50,41 @@ def print_afterhour_event(template: str, events: list[dict[str, str]]) -> None:
 
 
 def print_peak_events(template: str, events: list[dict[str, str]]) -> None:
-    peak_hours = ["9am", "10am", "11am", "12am", "1pm", "2pm", "3pm", "4pm"]
-
-    di = {day: [] for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]}
-
-    for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
-        for event in events:
-            if event["day"] == day:
-                di[day].append(event)
+    peak_hours = ["9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", "5pm"]
 
     for i, ii in pairwise(peak_hours):
-        output1 = []
-        output2 = []
+        line1 = [i]
+        line2 = [""]
+        bot_border = "-" * 80
         for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
-            for event in events:
-                if (
-                    event["day"] == day
-                    and _convert_time(event["start"]) >= _convert_time(_parse_time(i))
-                    and _convert_time(event["end"]) <= _convert_time(_parse_time(ii))
-                ):
-                    output1.append(event["title"][:10])
-                    output2.append(event["location"][:10])
-                    break
-            else:
-                output1.append("")
-                output2.append("")
+            # Check if there is any event in the same timeframe of 1 hour
+            one_hour_events = _find_events(
+                events, day=day, start=i, end=ii, is_inclusive=False
+            )
+            # two_hour_events = _find_events(
+            #     events, day=day, start=i, end=ii, is_inclusive=True
+            # )
+            two_hour_events = []
+            match (len(one_hour_events), len(two_hour_events)):
+                case (1, 0):
+                    # There is only one event in this timeframe
+                    line1.append("-" + one_hour_events[0]["title"][:9])
+                    line2.append("at " + one_hour_events[0]["location"][:7])
+                case (2, 0):
+                    # There are more than 2 events scheduled in this timeframe
+                    line1.append("-" + one_hour_events[0]["title"][:9])
+                    line2.append("-" + one_hour_events[1]["title"][:9])
+                case (0, 0):
+                    line1.append("")
+                    line2.append("")
 
-        print(template.format(i, *output1))
-        print(template.format(i, *output2))
+        # Print all output line
+        print(template.format(*line1))
+        print(template.format(*line2))
+        print(bot_border)
 
 
+print_header()
 print_peak_events(TEMPLATE, TIMETABLE)
 # slice_list = [
 #     [event for event in TIMETABLE if event["day"] == day]
@@ -85,3 +95,10 @@ print_peak_events(TEMPLATE, TIMETABLE)
 # print()
 # print_header(TEMPLATE)
 # print_afterhour_event(TEMPLATE, TIMETABLE)
+# pprint(
+#     _find_events(
+#         TIMETABLE, day="sat", start="09:00am", end="10:00am", is_inclusive=False
+#     )
+# )
+print("\u0332".join(c for c in "123456789"))
+print("\u0332".join(c for c in "123456789"))
