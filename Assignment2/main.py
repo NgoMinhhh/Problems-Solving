@@ -178,13 +178,36 @@ def _is_available(timetable: list[dict[str, str]], new_event: dict[str, str]) ->
 
 def _find_events(timetable: list[dict[str, str]], **kwargs) -> list[dict[str, str]]:
     match kwargs:
+        case {"day": day, "start": start, "end": end, "is_inclusive": False}:
+            # Find all events from start-end timeframe
+            # Use for printing timetable
+            events = []
+            cap_start, cap_end = [_convert_time(_parse_time(t)) for t in (start, end)]
+            for event in timetable:
+                if (
+                    event["day"] == day
+                    and cap_start <= _convert_time(event["start"]) < cap_end
+                ):
+                    events.append(event)
+        case {"day": day, "start": start, "end": end, "is_inclusive": True}:
+            # Find all events from start-end timeframe
+            # Use for printing timetable
+            events = []
+            cap_start, cap_end = [_convert_time(_parse_time(t)) for t in (start, end)]
+            for event in timetable:
+                if (
+                    event["day"] == day
+                    and cap_start <= _convert_time(event["start"])
+                    and _convert_time(event["end"]) <= cap_end
+                ):
+                    events.append(event)
         case {"day": day, "start": start}:
             # Should find one event only and return a one-item list to match interface
             # Or return an empty list
             events = [
                 event
                 for event in timetable
-                if event["start"] == start and event["day"] == day
+                if event["start"] == _convert_time(start) and event["day"] == day
             ]
         # case {'title': title}:
         #     ...
@@ -292,18 +315,18 @@ def save_timetable(timetable: list[dict[str, str]], filename: str) -> None:
 def print_events(events: list[dict[str, str]]) -> None:
     """Print events in table format"""
     print(f"Events in {events[0]['day']}:")
-    print("-" * 79)
+    print("-" * 80)
     # Print Header
     print(
-        "|{:^20}|{:^11}|{:^11}|{:^11}|{:^20}|".format(
+        "{:^22}|{:^11}|{:^11}|{:^11}|{:^21}".format(
             "TITLE", "DAY", "START", "END", "LOCATION"
         )
     )
-    print("-" * 79)
+    print("-" * 80)
     # Print Data
     for event in events:
         print(
-            "|{title:20}|{day:^11}|{start:^11}|{end:^11}|{location:20}|".format(
+            "{title:22}|{day:^11}|{start:^11}|{end:^11}|{location:21}".format(
                 title=event["title"],
                 day=event["day"].capitalize(),
                 start=event["start"],
@@ -312,7 +335,7 @@ def print_events(events: list[dict[str, str]]) -> None:
             )
         )
 
-    print("-" * 79)
+    print("-" * 80)
 
 
 def print_timetable(timetable, mode: str = "12") -> None:
