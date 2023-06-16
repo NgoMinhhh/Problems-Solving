@@ -54,18 +54,28 @@ def print_peak_events(template: str, events: list[dict[str, str]]) -> None:
             if event["day"] == day:
                 di[day].append(event)
 
-    for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
-        for i, ii in pairwise(peak_hours):
-            print(i)
-            print(ii)
-            for event in di[day]:
-                if _convert_time(event["start"]) >= _convert_time(_parse_time(i)):
-                    #  and _convert_time(event["end"]) <= _convert_time(_parse_time(ii)):
-                    print(event["title"])
+    for i, ii in pairwise(peak_hours):
+        output1 = []
+        output2 = []
+        for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
+            for event in events:
+                if (
+                    event["day"] == day
+                    and _convert_time(event["start"]) >= _convert_time(_parse_time(i))
+                    and _convert_time(event["end"]) <= _convert_time(_parse_time(ii))
+                ):
+                    output1.append(event["title"][:10])
+                    output2.append(event["location"][:10])
                     break
+            else:
+                output1.append("")
+                output2.append("")
+
+        print(template.format(i, *output1))
+        print(template.format(i, *output2))
 
 
-print(print_peak_events(TEMPLATE, TIMETABLE))
+print_peak_events(TEMPLATE, TIMETABLE)
 # slice_list = [
 #     [event for event in TIMETABLE if event["day"] == day]
 #     for day in ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
