@@ -144,7 +144,7 @@ def _parse_time(time: str) -> str:
 def _convert_time(time: str) -> int:
     """Convert time formatted as HH:mm am/pm into int for numeric comparison"""
     hh, mm = [t.strip() for t in time[:-2].split(":")]
-    if time[-2:] == "pm" and (hh := int(hh) <= 12):
+    if time[-2:] == "pm" and (hh := int(hh)) < 12:
         hh += 12
     return int(f"{hh}{mm}")
 
@@ -178,7 +178,7 @@ def _is_available(timetable: list[dict[str, str]], new_event: dict[str, str]) ->
 
 def _find_events(timetable: list[dict[str, str]], **kwargs) -> list[dict[str, str]]:
     match kwargs:
-        case {"day": day, "start": start, "end": end, "is_inclusive": False}:
+        case {"day": day, "start": start, "end": end}:
             # Find all events from start-end timeframe
             # Use for printing timetable
             events = []
@@ -187,20 +187,10 @@ def _find_events(timetable: list[dict[str, str]], **kwargs) -> list[dict[str, st
                 if (
                     event["day"] == day
                     and cap_start <= _convert_time(event["start"]) < cap_end
-                ):
-                    events.append(event)
-        case {"day": day, "start": start, "end": end, "is_inclusive": True}:
-            # Find all events from start-end timeframe
-            # Use for printing timetable
-            events = []
-            cap_start, cap_end = [_convert_time(_parse_time(t)) for t in (start, end)]
-            for event in timetable:
-                if (
-                    event["day"] == day
-                    and cap_start <= _convert_time(event["start"])
                     and _convert_time(event["end"]) <= cap_end
                 ):
                     events.append(event)
+
         case {"day": day, "start": start}:
             # Should find one event only and return a one-item list to match interface
             # Or return an empty list
