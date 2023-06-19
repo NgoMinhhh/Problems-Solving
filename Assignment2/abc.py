@@ -36,17 +36,41 @@ def print_header() -> None:
     print("-" * 80)
 
 
-def print_afterhour_event(template: str, events: list[dict[str, str]]) -> None:
-    output = []
-    for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
-        for event in events:
-            if not (event["day"] == day and _convert_time(event["start"]) <= 900):
-                continue
-            output.append(event["title"])
-        else:
-            output.append("")
+def print_offwork_events(
+    template: str, events: list[dict[str, str]], mode: str
+) -> None:
+    line1 = [""]
+    line2 = [""]
+    if mode.lower() == "before":
+        start = "12am"
+        end = "9am"
+    elif mode.lower() == "after":
+        start = "5pm"
+        end = "12am"
+    else:
+        raise ValueError("Incorrect mode")
 
-    print(template.format("", *output))
+    for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
+        events_2_print = _find_events(timetable=events, day=day, start=start, end=end)
+        match len(events_2_print):
+            case 0:
+                line1.append("")
+                line2.append("")
+            case 1:
+                line1.append(events_2_print[0]["title"])
+                line2.append(f'events_2_print[0]["start"] - events_2_print[0]["end"]')
+            case 2:
+                line1.append(events_2_print[0]["title"])
+                line2.append(events_2_print[1]["title"])
+            case _:
+                line1.append(events_2_print[0]["title"])
+                line2.append("etc.")
+
+    print(template.format(*line1))
+    print(template.format(*line2))
+
+    if mode == "before":
+        print("-" * 80)
 
 
 def triplewise(iterable):
