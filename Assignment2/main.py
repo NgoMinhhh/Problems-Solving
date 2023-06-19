@@ -328,8 +328,48 @@ def print_events(events: list[dict[str, str]]) -> None:
     print("-" * 80)
 
 
-def print_timetable(timetable, mode: str = "12") -> None:
-    pass
+def print_header(days: list[str]) -> None:
+    """Print Header for timetable, including an empty col for time and 7 cols for respective days"""
+    print("{:5}|{:^10}|{:^10}|{:^10}|{:^10}|{:^10}|{:^10}|{:^9}".format(*days))
+    print("-" * 80)
+
+
+def print_offwork_events(
+    template: str, events: list[dict[str, str]], mode: str
+) -> None:
+    """Print offwork events before 9am and after 5pm periods"""
+    line1 = [""]
+    line2 = [""]
+    if mode.lower() == "before":
+        start = "12am"
+        end = "9am"
+    elif mode.lower() == "after":
+        start = "5pm"
+        end = "12am"
+    else:
+        raise ValueError("Incorrect mode")
+
+    for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
+        events_2_print = _find_events(timetable=events, day=day, start=start, end=end)
+        match len(events_2_print):
+            case 0:
+                line1.append("")
+                line2.append("")
+            case 1:
+                line1.append(events_2_print[0]["title"])
+                line2.append(f'events_2_print[0]["start"] - events_2_print[0]["end"]')
+            case 2:
+                line1.append(events_2_print[0]["title"])
+                line2.append(events_2_print[1]["title"])
+            case _:
+                line1.append(events_2_print[0]["title"])
+                line2.append("etc.")
+
+    print(template.format(*line1))
+    print(template.format(*line2))
+
+    if mode == "before":
+        print("-" * 80)
 
 
 if __name__ == "__main__":
