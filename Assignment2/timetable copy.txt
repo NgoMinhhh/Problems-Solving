@@ -1,0 +1,16 @@
+title	day	start	end	location
+Gym	mon	7:00am	7:30am	
+DS Seminar	mon	10:00am	11:00am	F1-24
+Tutoring	mon	7:00pm	8:30pm	
+Gym	tue	7:00am	7:30am	
+CS Lecture	tue	1:10pm	3:00pm	Online
+CS Practical	tue	3:10pm	4:00pm	P1-13
+Gym	wed	7:00am	7:30am	
+DS Practical	wed	11:10am	12:00pm	P1-13
+Tutoring	wed	7:00pm	8:30pm	
+Gym	thu	7:00am	7:30am	
+Lunch with Kevin	thu	12:00pm	1:00pm	
+Gym	fri	7:00am	7:30am	
+Meet Project Manager	fri	10:00am	10:30am	
+Meet Supervisor	fri	10:30am	11:00am	
+Book Club	fri	2:30pm	4:00pm	MLK Library
