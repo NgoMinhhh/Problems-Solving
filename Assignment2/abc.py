@@ -2,7 +2,7 @@ from pprint import pprint
 from main import load_timetable, _convert_time, _parse_time, _find_events
 from itertools import pairwise
 
-TIMETABLE = load_timetable(r"Assignment2\timetable.txt")
+TIMETABLE = load_timetable(r"Assignment2\timetable copy.txt")
 TEMPLATE = "{:5}|{:10}|{:10}|{:10}|{:10}|{:10}|{:10}|{:9}"
 
 
@@ -152,7 +152,9 @@ def _convert_time_display(time: str) -> str:
 
 
 print_header()
+print_offwork_events(TEMPLATE, TIMETABLE, mode="before")
 print_peak_events(TEMPLATE, TIMETABLE)
+print_offwork_events(TEMPLATE, TIMETABLE, mode="after")
 
 
 # print(TEMPLATE.format(*[""] * 8))
