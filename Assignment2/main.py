@@ -3,7 +3,7 @@ from pprint import pprint
 
 def main():
     timetable: list[dict[str, str]] = []
-
+    days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     while True:
         print("==== Timetable Management ====")
         print("1. Create New Event")
@@ -27,12 +27,16 @@ def main():
                         print("Event is in the timeframe of another one")
             case "2":
                 update_event(timetable)
-            case "4":
-                pprint(timetable)
+            case "4":  # Print full timetable
+                line_template = "{:5}|{:10}|{:10}|{:10}|{:10}|{:10}|{:10}|{:9}"
+                print_header(days)
+                print_offwork_events(line_template, timetable, days, mode="before")
+                print_working_events(line_template, timetable, days)
+                print_offwork_events(line_template, timetable, days, mode="after")
             case "5":
                 print_events(timetable)
             case "7":
-                timetable = load_timetable(r"Assignment2\timetable.txt")
+                timetable = load_timetable(r"Assignment2\timetable copy.txt")
                 if timetable:
                     print("Data load successfully!")
                 else:
@@ -146,6 +150,8 @@ def _convert_time(time: str) -> int:
     hh, mm = [t.strip() for t in time[:-2].split(":")]
     if time[-2:] == "pm" and (hh := int(hh)) < 12:
         hh += 12
+    elif time[-2:] == "am" and int(hh) == 12:
+        hh = 0
     return int(f"{hh}{mm}")
 
 
@@ -185,7 +191,7 @@ def _find_events(timetable: list[dict[str, str]], **kwargs) -> list[dict[str, st
             cap_start, cap_end = [_convert_time(_parse_time(t)) for t in (start, end)]
             for event in timetable:
                 if (
-                    event["day"] == day
+                    event["day"].lower() == day.lower()
                     and cap_start <= _convert_time(event["start"]) < cap_end
                     and _convert_time(event["end"]) <= cap_end
                 ):
@@ -284,9 +290,9 @@ def load_timetable(filename: str) -> list[dict[str, str]]:
     """Load timetable from txt file and return empty list if fail"""
     with open(filename, "r") as f:
         lines = f.read().splitlines()
-        headers = lines[0].split("\,")
+        headers = lines[0].split("\t")
         tb = [
-            {headers[i]: val for i, val in enumerate(line.split("\,"))}
+            {headers[i]: val for i, val in enumerate(line.split("\t"))}
             for line in lines[1:]
         ]
     return tb
@@ -330,12 +336,12 @@ def print_events(events: list[dict[str, str]]) -> None:
 
 def print_header(days: list[str]) -> None:
     """Print Header for timetable, including an empty col for time and 7 cols for respective days"""
-    print("{:5}|{:^10}|{:^10}|{:^10}|{:^10}|{:^10}|{:^10}|{:^9}".format(*days))
-    print("-" * 80)
+    print(" " * 4, "|{:^10}|{:^10}|{:^10}|{:^10}|{:^10}|{:^10}|{:^9}".format(*days))
+    print(("-" * 5 + ("|" + "-" * 10) * 7)[:80])
 
 
 def print_offwork_events(
-    template: str, events: list[dict[str, str]], mode: str
+    line_template: str, timetable: list[dict[str, str]], days: list[str], mode: str
 ) -> None:
     """Print offwork events before 9am and after 5pm periods"""
     line1 = [""]
@@ -345,31 +351,123 @@ def print_offwork_events(
         end = "9am"
     elif mode.lower() == "after":
         start = "5pm"
-        end = "12am"
+        end = "11:59pm"
     else:
         raise ValueError("Incorrect mode")
 
-    for day in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
-        events_2_print = _find_events(timetable=events, day=day, start=start, end=end)
+    for day in days:
+        events_2_print = _find_events(timetable, day=day, start=start, end=end)
         match len(events_2_print):
             case 0:
                 line1.append("")
                 line2.append("")
             case 1:
-                line1.append(events_2_print[0]["title"])
-                line2.append(f'events_2_print[0]["start"] - events_2_print[0]["end"]')
+                line1.append(events_2_print[0]["title"][:9])
+                line2.append(
+                    f'{events_2_print[0]["start"]} - {events_2_print[0]["end"]}'[:9]
+                )
             case 2:
-                line1.append(events_2_print[0]["title"])
-                line2.append(events_2_print[1]["title"])
+                line1.append(events_2_print[0]["title"][:9])
+                line2.append(events_2_print[1]["title"][:9])
             case _:
-                line1.append(events_2_print[0]["title"])
+                line1.append(events_2_print[0]["title"][:9])
                 line2.append("etc.")
 
-    print(template.format(*line1))
-    print(template.format(*line2))
+    print(line_template.format(*line1))
+    print(line_template.format(*line2))
 
     if mode == "before":
-        print("-" * 80)
+        print(("-" * 5 + ("|" + "-" * 10) * 7)[:80])
+
+
+def get_multihour_events(timetable):
+    multi_hour_events = []
+    for event in timetable:
+        # (1359 // 100 + 1) * 100)
+        time_span = _convert_time(event["end"]) - _convert_time(event["start"])
+        if time_span > 100:
+            start_cap = _convert_time(event["start"]) // 100 * 100
+            end_cap = start_cap + 100
+            event["multi_timeframe"] = f"{start_cap}-{end_cap}"  # To search for
+            event["border_track"] = round(time_span / 200)
+            multi_hour_events.append(event)
+    return multi_hour_events
+
+
+def print_working_events(
+    line_template: str, timetable: list[dict[str, str]], days: list[str]
+) -> None:
+    working_hours = ["9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", "5pm"]
+    multihour_events = get_multihour_events(timetable)
+
+    for i in range(len(working_hours)):
+        if i == len(working_hours) - 1:
+            return
+        line1 = [working_hours[i]]
+        line2 = [""]
+        bot_border = "-" * 5 + "|"
+
+        for day in days:
+            one_hour_events = _find_events(
+                timetable, day=day, start=working_hours[i], end=working_hours[i + 1]
+            )
+            multihour_event = {}
+            # j = len(multihour_events) - 1
+            # while j < 0:
+            #     if (
+            #         multihour_events[i]["day"] == day
+            #         and multihour_events[i]["start"] <= working_hours[i]
+            #         and multihour_events[i]["end"] >= working_hours[i + 1]
+            #     ):
+            #         multihour_event = multihour_events[i]
+            #         j = 0
+            #     else:
+            #         j -= 1
+            # TODO: Convert break statement to while statement
+            for event in multihour_events:
+                start_cap, end_cap = event["multi_timeframe"].split("-")
+                if (
+                    event["day"].lower() == day.lower()
+                    and _convert_time(_parse_time(working_hours[i])) == int(start_cap)
+                    and _convert_time(_parse_time(working_hours[i + 1])) == int(end_cap)
+                ):
+                    multihour_event = event
+                    break
+            if multihour_event:
+                # There is one multi hour event and will have no other events
+                if multihour_event["border_track"] > 0:
+                    line1.append("-" + multihour_event["title"][:9])
+                    line2.append(multihour_event["location"][:9])
+                    bot_border += (
+                        f'{multihour_event["start"]} - {multihour_event["end"]}'[:9]
+                        + ".|"
+                        or " " * 10
+                    )
+                    multihour_event["border_track"] = 0
+                    multihour_event["multi_timeframe"] = f"{end_cap}-{int(end_cap)+100}"
+                else:
+                    line1.append("")
+                    line2.append("")
+                    bot_border += "-" * 10 + "|"
+            elif len(one_hour_events) == 1:
+                # There is one event in this timeframe
+                line1.append("-" + one_hour_events[0]["title"][:9])
+                line2.append("-" + one_hour_events[0]["location"][:9])
+                bot_border += "-" * 10 + "|"
+            elif len(one_hour_events) == 2:
+                # There are more than 2 events scheduled in this timeframe
+                line1.append("-" + one_hour_events[0]["title"][:9])
+                line2.append("-" + one_hour_events[1]["title"][:9])
+                bot_border += "-" * 10 + "|"
+            else:
+                line1.append("")
+                line2.append("")
+                bot_border += "-" * 10 + "|"
+
+        # Print all output line
+        print(line_template.format(*line1)[:80])
+        print(line_template.format(*line2)[:80])
+        print(bot_border[:80])
 
 
 if __name__ == "__main__":
