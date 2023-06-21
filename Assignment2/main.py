@@ -1,25 +1,53 @@
-from pprint import pprint
+# File: main.py
+# Author: Nhat Minh Ngo
+# Student ID: 110401845
+# Email ID: ngony007
+# This is my own work as defined by
+#   the University's Academic Misconduct Policy.
 
 
 def main():
+    # Display Author info
+    print("Author: Nhat Minh Ngo")
+    print("Email : ngony007@mymail.unisa.edu.au")
+
+    # Initialize 'global' variables
     timetable: list[dict[str, str]] = []
+    ## Default display days in timetable, can be changed via option 8
     days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+    # Primary loop for menu
     while True:
-        print("==== Timetable Management ====")
-        print("1. Create New Event")
-        print("2. Update Event")
-        print("3. Delete Event")
-        print("4. Print Timetable")
-        print("5. Print Events on Day")
-        # print("6. Save Timetable")
-        print("7. Load timetable data")
-        print("0. Quit")
-        print("9. test")
+        print(f"{' TIMETABLE MANAGEMENT ':=^80}")
+        options: tuple[str] = (
+            "1. Create New Event",
+            "2. Update Event",
+            "3. Delete Event",
+            "4. Find Events",
+            "5. Print Timetable",
+            "6. Save Timetable to file",
+            "7. Load Timetable to file",
+            "8. Set start day",
+            "0. Quit",
+        )
+        # To display options in two cols style
+        for i in range(len(options)):
+            try:
+                if i % 2 == 0:
+                    print(" {:40}{:40}".format(options[i], options[i + 1]))
+                else:
+                    continue
+            except IndexError:
+                print(" {:40}{:40}".format(options[i], ""))
+
+        # Ask for Choice
         choice = input("Enter your choice: ")
         match choice:
-            case "0":
-                return
-            case "1":
+            case "0":  # Quit Program
+                if ask_confirmation():
+                    return
+                continue
+            case "1":  # Create New Event
                 if event := create_event():
                     if _is_available(timetable, event):
                         timetable.append(event)
@@ -70,9 +98,9 @@ def main():
         print()
 
 
-def create_event() -> dict[str, str] | None:
-    """Create valid event"""
-    # Ask title
+def create_event() -> dict[str, str]:
+    """Encapsulation for all user's inputs and validations"""
+    # Ask for title
     if not (title := input("Title: ")):
         print("Title can not be empty!")
         return
@@ -480,6 +508,18 @@ def print_working_events(
         print(line_template.format(*line1)[:80])
         print(line_template.format(*line2)[:80])
         print(bot_border[:80])
+
+
+def ask_confirmation() -> bool:
+    """Ask user for confirmation, return True/False"""
+    while True:
+        answer = input("Confirm ? (y/n): ").lower()
+        if answer == "y":
+            return True
+        elif answer == "n":
+            return False
+        else:
+            continue
 
 
 if __name__ == "__main__":
