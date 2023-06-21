@@ -397,42 +397,43 @@ def get_multihour_events(timetable):
 def print_working_events(
     line_template: str, timetable: list[dict[str, str]], days: list[str]
 ) -> None:
-    working_hours = ["9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", "5pm"]
+    work_hours = ["9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", "5pm"]
     multihour_events = get_multihour_events(timetable)
 
-    for i in range(len(working_hours)):
-        if i == len(working_hours) - 1:
+    for i in range(len(work_hours)):
+        if i == len(work_hours) - 1:
             return
-        line1 = [working_hours[i]]
+        line1 = [work_hours[i]]
         line2 = [""]
         bot_border = "-" * 5 + "|"
 
         for day in days:
             one_hour_events = _find_events(
-                timetable, day=day, start=working_hours[i], end=working_hours[i + 1]
+                timetable, day=day, start=work_hours[i], end=work_hours[i + 1]
             )
             multihour_event = {}
-            # j = len(multihour_events) - 1
-            # while j < 0:
-            #     if (
-            #         multihour_events[i]["day"] == day
-            #         and multihour_events[i]["start"] <= working_hours[i]
-            #         and multihour_events[i]["end"] >= working_hours[i + 1]
-            #     ):
-            #         multihour_event = multihour_events[i]
-            #         j = 0
-            #     else:
-            #         j -= 1
-            # TODO: Convert break statement to while statement
-            for event in multihour_events:
-                start_cap, end_cap = event["multi_timeframe"].split("-")
+            j = len(multihour_events) - 1
+            while j >= 0:
+                start_cap, end_cap = multihour_events[j]["multi_timeframe"].split("-")
                 if (
-                    event["day"].lower() == day.lower()
-                    and _convert_time(_parse_time(working_hours[i])) == int(start_cap)
-                    and _convert_time(_parse_time(working_hours[i + 1])) == int(end_cap)
+                    multihour_events[j]["day"].lower() == day.lower()
+                    and _convert_time(_parse_time(work_hours[i])) == int(start_cap)
+                    and _convert_time(_parse_time(work_hours[i + 1])) == int(end_cap)
                 ):
-                    multihour_event = event
-                    break
+                    multihour_event = multihour_events[j]
+                    j = -1
+                else:
+                    j -= 1
+            # TODO: Convert break statement to while statement
+            # for event in multihour_events:
+            #     start_cap, end_cap = event["multi_timeframe"].split("-")
+            #     if (
+            #         event["day"].lower() == day.lower()
+            #         and _convert_time(_parse_time(work_hours[i])) == int(start_cap)
+            #         and _convert_time(_parse_time(work_hours[i + 1])) == int(end_cap)
+            #     ):
+            #         multihour_event = event
+            #         break
             if multihour_event:
                 # There is one multi hour event and will have no other events
                 if multihour_event["border_track"] > 0:
