@@ -48,13 +48,31 @@ def main():
                     return
                 continue
             case "1":  # Create New Event
-                # Ask for Title
+                # Ask for all info to create a event
+                print(" --> Creating new event")
+                try:
+                    event = ask_info(
+                        {
+                            "title": "Title (Required) : ",
+                            "location": "Location (Optional): ",
+                            "day": "Day: ",
+                            "start": "Start (e.g. 7am, 10:30pm): ",
+                            "end": "End (e.g. 7am, 10:30pm): ",
+                        }
+                    )
+                except Exception as e:
+                    print(e)
+                    continue
 
-                if event := create_event():
-                    if _is_available(timetable, event):
+                # Check for availibility
+                if is_available(timetable, event):
+                    if ask_confirmation("You are ADDING new event."):
                         timetable.append(event)
+                        print("Event created successfully")
                     else:
-                        print("Event is in the timeframe of another one")
+                        print("Action aborted")
+                else:
+                    print("Event is in the timeframe of another one. Please try again!")
             case "2":
                 update_event(timetable)
             case "3":
@@ -117,7 +135,7 @@ def ask_info(fields: dict[str, str], allow_blank: bool = False) -> dict[str, str
     """
     result: dict[str, str] = {}
     for field, prompt in fields.items():
-        value = input(f"{prompt}: ")
+        value = input(prompt)
         match field:
             case "title":
                 if not value and not allow_blank:
@@ -162,52 +180,15 @@ def ask_info(fields: dict[str, str], allow_blank: bool = False) -> dict[str, str
                         raise e
 
         result[field] = value
+
+    # Check if end time is later than start time
+    if result["start"] and result["end"]:
+        if _convert_time(result["start"]) > _convert_time(result["end"]):
+            raise ValueError("Invalid! End time must be later than start time")
     return result
 
 
-def create_event() -> dict[str, str]:
-    """Encapsulation for all user's inputs and validations"""
-    # Ask for title
-    if not (title := input("Title: ")):
-        print("Title can not be empty!")
-        return
-
-    # Ask day
-    day = input("Day (e.g. monday, tue): ")
-    if not (_is_day(day)):
-        print("Invalid input! Wrong format")
-        return
-
-    # Ask time
-    start = _parse_time(input("Time start (e.g. 7am, 10:30pm): "))
-    if not start:
-        print("Invalid input! Wrong format")
-        return
-
-    end = _parse_time(input("Time end (e.g. 7pm, 10:30am): "))
-    if not end:
-        print("Invalid input! Wrong format")
-        return
-
-    # Check if end time is later than start time
-    if _convert_time(start) >= _convert_time(end):
-        print("Invalid input! End time must be later than start time")
-        return
-
-    # Ask Loc
-    if location := input("Location (optional): "):
-        return {
-            "title": title,
-            "day": day,
-            "start": start,
-            "end": end,
-            "location": location,
-        }
-
-    # Return dict with no loc key to match interface of dict[str,str]
-    return {"title": title, "day": day, "start": start, "end": end}
-
-
+# TODO: Delete
 def _is_day(day: str) -> bool:
     """Validate day input"""
     if day.lower().strip() in [
@@ -265,7 +246,7 @@ def _convert_time(time: str) -> int:
     return int(f"{hh}{mm}")
 
 
-def _is_available(timetable: list[dict[str, str]], new_event: dict[str, str]) -> bool:
+def is_available(timetable: list[dict[str, str]], new_event: dict[str, str]) -> bool:
     """Check availability by comparing start, end time of the new event against all events in the same day"""
 
     # Does not need to proceed if timetable is empty
@@ -357,7 +338,7 @@ def update_event(timetable: list[dict[str, str]]) -> None:
 
     # Remove said event from loop
     timetable.remove(event)
-    if _is_available(timetable, new_event):
+    if is_available(timetable, new_event):
         timetable.append(new_event)
         print("Event updated succesfully")
     else:
@@ -381,7 +362,7 @@ def _edit_field(
         case {"day": day}:
             new_event = event.copy()
             new_event.update(day=day)
-            if _is_available(timetable, new_event):
+            if is_available(timetable, new_event):
                 print("Day is edited")
                 event["day"] = day
                 return {"day": day}
@@ -583,6 +564,15 @@ def ask_confirmation(prompt: str) -> bool:
             return False
         else:
             continue
+
+
+def sort_timetable(timetable: list[dict[str, str]], days: list[str]) -> None:
+    """Sort timetable in place first with days then start time in acensding order
+    ### Params
+    1. timetable
+    2. days: current day list"""
+    ordered_days = {day: i for i, day in enumerate(days)}
+    timetable.sort(key=lambda e: (ordered_days[e["day"]], _convert_time(e["start"])))
 
 
 if __name__ == "__main__":
