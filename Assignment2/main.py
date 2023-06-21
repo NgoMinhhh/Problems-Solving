@@ -8,7 +8,7 @@ def main():
         print("==== Timetable Management ====")
         print("1. Create New Event")
         print("2. Update Event")
-        # print("3. Delete Event")
+        print("3. Delete Event")
         print("4. Print Timetable")
         print("5. Print Events on Day")
         # print("6. Save Timetable")
@@ -27,6 +27,25 @@ def main():
                         print("Event is in the timeframe of another one")
             case "2":
                 update_event(timetable)
+            case "3":
+                # TODO: Refactor Update function
+                # Ask day
+                day = input("Day (e.g. monday, tue): ").lower()
+                if not (_is_day(day)):
+                    print("Invalid input! Wrong format")
+                    return
+                # Ask time
+                start = _parse_time(input("Time start (e.g. 7am, 10:30pm): "))
+                if not start:
+                    print("Invalid input! Wrong format")
+                    return
+                try:
+                    event = _find_events(timetable, day=day, start=start)[0]
+                    confirm = input("Are you sure ? (y/n)")
+                    timetable.remove(event)
+                except IndexError:
+                    print("No event found!")
+                    return
             case "4":  # Print full timetable
                 line_template = "{:5}|{:10}|{:10}|{:10}|{:10}|{:10}|{:10}|{:9}"
                 print_header(days)
