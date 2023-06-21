@@ -411,6 +411,7 @@ def print_working_events(
             one_hour_events = _find_events(
                 timetable, day=day, start=work_hours[i], end=work_hours[i + 1]
             )
+
             multihour_event = {}
             j = len(multihour_events) - 1
             while j >= 0:
@@ -424,16 +425,7 @@ def print_working_events(
                     j = -1
                 else:
                     j -= 1
-            # TODO: Convert break statement to while statement
-            # for event in multihour_events:
-            #     start_cap, end_cap = event["multi_timeframe"].split("-")
-            #     if (
-            #         event["day"].lower() == day.lower()
-            #         and _convert_time(_parse_time(work_hours[i])) == int(start_cap)
-            #         and _convert_time(_parse_time(work_hours[i + 1])) == int(end_cap)
-            #     ):
-            #         multihour_event = event
-            #         break
+
             if multihour_event:
                 # There is one multi hour event and will have no other events
                 if multihour_event["border_track"] > 0:
@@ -449,7 +441,7 @@ def print_working_events(
                 else:
                     line1.append("")
                     line2.append("")
-                    bot_border += "-" * 10 + "|"
+                    bot_border += " " * 10 + "|"
             elif len(one_hour_events) == 1:
                 # There is one event in this timeframe
                 line1.append("-" + one_hour_events[0]["title"][:9])
