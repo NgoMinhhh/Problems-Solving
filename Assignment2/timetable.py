@@ -39,6 +39,7 @@ def main():
                 pprint(timetable)
         print()
 
+
 def display_title():
     """Display author info and program title"""
     print("Author: Nhat Minh Ngo")
@@ -85,12 +86,13 @@ def create_event(timetable: list[dict[str, str]]):
     if location:
         event["location"] = location
 
-    if _is_available(timetable,event):
+    if _is_available(timetable, event):
         timetable.append(event)
         print("New Event Created.")
     else:
         print("Can't Add Event")
-        
+
+
 def edit_event(timetable: dict[str, list[dict[str, str]]]):
     """Edit existing event, prompt user for start time"""
     event = _find_event(timetable)
@@ -103,7 +105,7 @@ def edit_event(timetable: dict[str, list[dict[str, str]]]):
             case "title" | "location" as key:
                 event[key] = input("New value: ")
             case "day":
-                
+                ...
 
 
 def print_timetable(timetable):
@@ -120,7 +122,9 @@ def load_timetable(filename: str) -> list[dict[str, str]]:
             headers = lines[0].split(",")
             for line in lines[1:]:
                 data = line.split(",")
-                timetable.append({headers[i]: data[i].lower() for i in range(len(data))})
+                timetable.append(
+                    {headers[i]: data[i].lower() for i in range(len(data))}
+                )
     except FileNotFoundError:
         return []
     return timetable
@@ -204,17 +208,17 @@ def _find_event(timetable) -> dict[str, str] | None:
             return None
 
 
-def _is_available(timetable, event:dict[str,str]) -> bool:
+def _is_available(timetable, event: dict[str, str]) -> bool:
     """Check day time availability against existing timetable"""
     # TODO: Convert time to 24h format and do int comparison
     if not timetable:
         return True
 
-    new_start, new_end = [_convert_time(t) for t in (event['start'],event['end'])] 
+    new_start, new_end = [_convert_time(t) for t in (event["start"], event["end"])]
     day_events = [new_e for new_e in timetable if new_e["day"].lower() == event["day"]]
     for event in day_events:
         old_start, old_end = [_convert_time(t) for t in (event["start"], event["end"])]
-        if old_start <= new_start <= old_end or old_start <=new_end <= old_end:
+        if old_start <= new_start <= old_end or old_start <= new_end <= old_end:
             return False
     return True
 
