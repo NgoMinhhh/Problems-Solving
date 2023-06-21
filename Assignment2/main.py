@@ -246,7 +246,7 @@ def _convert_time(time: str) -> int:
     return int(f"{hh}{mm}")
 
 
-def is_available(timetable: list[dict[str, str]], new_event: dict[str, str]) -> bool:
+def _is_available(timetable: list[dict[str, str]], new_event: dict[str, str]) -> bool:
     """Check availability by comparing start, end time of the new event against all events in the same day"""
 
     # Does not need to proceed if timetable is empty
@@ -338,7 +338,7 @@ def update_event(timetable: list[dict[str, str]]) -> None:
 
     # Remove said event from loop
     timetable.remove(event)
-    if is_available(timetable, new_event):
+    if _is_available(timetable, new_event):
         timetable.append(new_event)
         print("Event updated succesfully")
     else:
@@ -362,7 +362,7 @@ def _edit_field(
         case {"day": day}:
             new_event = event.copy()
             new_event.update(day=day)
-            if is_available(timetable, new_event):
+            if _is_available(timetable, new_event):
                 print("Day is edited")
                 event["day"] = day
                 return {"day": day}
