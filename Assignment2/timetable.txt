@@ -1,6 +1,12 @@
-title,day,start,end,location
-"Gym",Mon,07:00AM,07:30AM
-"Gym2",Mon,08:00AM,08:30AM
-"Gym",Tue,07:00AM,07:30PM
-"Gym",Wed,07:00AM,07:30PM
-"Event4",Thu,09:00AM,10:30AM,"Where"
+title\,day\,start\,end\,location
+Gym\,Mon\,07:00am\,08:00am\,UniSA City West
+Breakfast\,Mon\,08:00am\,08:30am\,Sitlo
+Class 1\,Tue\,10:00am\,11:00am\,Mawson Lake
+Class 2\,Tue\,12:00pm\,01:00pm\,Mawson Lake
+Gym\,wed\,07:00am\,07:30am\,UniSA City West
+Self-study\,Tue\,11:00am\,02:00pm\,Mawson Lake
+Groceries Shop\,Fri\,09:00am\,09:30am\,UniSA City West
+Brunch\,Fri\,09:30am\,10:00am\,UniSA City West
+Badminton\,Sat\,09:00am\,11:00am\,Court
+Badminton\,Sat\,12:00pm\,3:00pm\,Court
+Dinner with Babe\,Sun\,06:00pm\,07:30pm\,Windy Point
