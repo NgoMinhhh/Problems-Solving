@@ -44,10 +44,12 @@ def main():
         choice = input("Enter your choice: ")
         match choice:
             case "0":  # Quit Program
-                if ask_confirmation():
+                if ask_confirmation("You are about to QUIT program."):
                     return
                 continue
             case "1":  # Create New Event
+                # Ask for Title
+
                 if event := create_event():
                     if _is_available(timetable, event):
                         timetable.append(event)
@@ -94,8 +96,73 @@ def main():
                 events = _find_events(timetable, day=day, start=start)
                 _edit_field(timetable, events[0], location="s")
             case _:
+                print("Invalid Choice. Please select again!")
                 continue
         print()
+
+
+def ask_info(fields: dict[str, str], allow_blank: bool = False) -> dict[str, str]:
+    """Encapsulation for all ask for input and validation features
+    ### Params
+    1. fields:
+        - key: for field(title, loc, day, etc)
+        - value: prompt for input
+    2. allow_blank:
+        - flag allowing blank for values
+        - location can always be blank regardless
+    ### Return
+    Dict with key as field name and value as input
+    ### Raise
+    ValueError if violating any validation
+    """
+    result: dict[str, str] = {}
+    for field, prompt in fields.items():
+        value = input(f"{prompt}: ")
+        match field:
+            case "title":
+                if not value and not allow_blank:
+                    raise ValueError(
+                        f"Invalid! {field.capitalize()} must not be blank!"
+                    )
+            case "location":
+                pass
+            case "day":
+                valid_days = (
+                    "monday",
+                    "mon",
+                    "tuesday",
+                    "tue",
+                    "wednesday",
+                    "wed",
+                    "thursday",
+                    "thu",
+                    "friday",
+                    "fri",
+                    "saturday",
+                    "sat",
+                    "sunday",
+                    "sun",
+                )
+                value = value.lower()
+                if value not in valid_days and not allow_blank:
+                    raise ValueError(
+                        "Invalid! Only accept full name or first 3 letter of day"
+                    )
+            case "start" | "end":
+                if not value and not allow_blank:
+                    raise ValueError(
+                        f"Invalid! {field.capitalize()} must not be blank!"
+                    )
+                elif not value and allow_blank:
+                    pass
+                else:
+                    try:
+                        value = _parse_time(value)
+                    except Exception as e:
+                        raise e
+
+        result[field] = value
+    return result
 
 
 def create_event() -> dict[str, str]:
@@ -166,30 +233,26 @@ def _is_day(day: str) -> bool:
 def _parse_time(time: str) -> str:
     """Parse time in HH:mmAM/PM format, return empty string if invalid input"""
     txt = time.strip()
-    try:
-        # Check for AM/PM
-        period = txt[-2:].lower()
-        if period not in ["am", "pm"]:
-            return ""
+    # Check for AM/PM
+    period = txt[-2:].lower()
+    if period not in ["am", "pm"]:
+        raise ValueError("Invalid! Must have am or pm")
 
-        # Get hour and minute
-        match txt[:-2].split(":"):
-            case (hh, mm):
-                hh, mm = (hh, mm)
-            case (hh,):
-                hh = hh
-                mm = "00"
-            case _:
-                return ""
+    # Get hour and minute
+    match txt[:-2].split(":"):
+        case (hh, mm):
+            hh, mm = (hh, mm)
+        case (hh,):
+            hh = hh
+            mm = "00"
+        case _:
+            raise ValueError("Invald! Wrong HH:mm format")
 
-        # Compare hour and minute in range
-        if not (0 <= int(hh) <= 12 and 0 <= int(mm) <= 59):
-            return ""
+    # Compare hour and minute in range
+    if not (0 < int(hh) <= 12 and 0 <= int(mm) <= 59):
+        raise ValueError("Invalid! Hour or Minute not in valid range")
 
-        return f"{hh.rjust(2,'0')}:{mm.rjust(2,'0')}{period}"
-
-    except Exception:
-        return ""
+    return f"{hh}:{mm.rjust(2,'0')}{period}"
 
 
 def _convert_time(time: str) -> int:
@@ -510,10 +573,10 @@ def print_working_events(
         print(bot_border[:80])
 
 
-def ask_confirmation() -> bool:
+def ask_confirmation(prompt: str) -> bool:
     """Ask user for confirmation, return True/False"""
     while True:
-        answer = input("Confirm ? (y/n): ").lower()
+        answer = input(f"{prompt} Confirm ? (y/n): ").lower()
         if answer == "y":
             return True
         elif answer == "n":
