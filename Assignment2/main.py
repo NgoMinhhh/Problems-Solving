@@ -19,7 +19,7 @@ def main():
     # Primary loop for menu
     while True:
         print(f"{' TIMETABLE MANAGEMENT ':=^80}")
-        options: tuple[str] = (
+        options: list[str] = [
             "0. Quit",
             "1. Create New Event",
             "2. Update Event",
@@ -29,19 +29,23 @@ def main():
             "6. Save Timetable to file",
             "7. Load Timetable to file",
             "8. Set start day",
-        )
+        ]
         # To display options in two cols style
+        # Left col for odd numbered, right col for even numbered options
         for i in range(len(options)):
             try:
                 if i % 2 == 0:
-                    print(" {:40}{:40}".format(options[i], options[i + 1]))
+                    print("{:40}{:40}".format(options[i], options[i + 1]))
                 else:
                     continue
             except IndexError:
-                print(" {:40}{:40}".format(options[i], ""))
+                print("{:40}{:40}".format(options[i], ""))
 
         # Ask for Choice
-        choice = input("Enter your choice: ")
+        choice = input(" - Enter your choice: ")
+        print("-> " + options[int(choice)][3:].upper())
+
+        # Match-Case instead of If-else for cleaner branching
         match choice:
             case "0":  # Quit Program
                 if ask_confirmation("You are about to QUIT program."):
@@ -49,32 +53,30 @@ def main():
                 continue
             case "1":  # Create New Event
                 # Ask for all info to create a event
-                print(" --> Creating new event")
                 try:
                     event = ask_info(
                         {
-                            "title": "Title (Required) : ",
-                            "location": "Location (Optional): ",
-                            "day": "Day: ",
-                            "start": "Start (e.g. 7am, 10:30pm): ",
-                            "end": "End (e.g. 7am, 10:30pm): ",
+                            "title": " - Title (Required) : ",
+                            "location": " - Location (Optional): ",
+                            "day": " - Day: ",
+                            "start": " - Start (e.g. 7am, 10:30pm): ",
+                            "end": " - End (e.g. 7am, 10:30pm): ",
                         }
                     )
                 except Exception as e:
                     print(e)
                     continue
 
-                # Check for availibility
+                # Check new event for availibility
                 if is_available(timetable, event):
-                    if ask_confirmation("You are ADDING new event."):
+                    if ask_confirmation("~You are CREATING new event~"):
                         timetable.append(event)
-                        print("Event created successfully")
+                        print("RESULT: Event created successfully")
                     else:
-                        print("Action aborted")
+                        print("RESULT: Action aborted")
                 else:
-                    print("Event is in the timeframe of another one. Please try again!")
+                    print("ERROR! Event is in the timeframe of another one")
             case "2" | "3" | "4":  # Update Event / Delete Event / Find Events
-                print(" --> " + options[int(choice)][3:].upper())
                 try:
                     search_terms = ask_search_terms()
                 except Exception as e:
@@ -82,7 +84,7 @@ def main():
                     continue
                 events = _find_events(timetable, **search_terms)
                 if not events:
-                    print("No event found!")
+                    print("RESULT: No event found")
                     continue
 
                 print_events(events)
@@ -98,14 +100,14 @@ def main():
                         old_event = events[event_id]
                         tries = False
                     except IndexError | ValueError:
-                        print("Invalid choice! Please choose again")
+                        print("ERROR! Invalid choice")
 
                 if choice == "3":  # Delete Event
-                    if ask_confirmation("You are DELETING event."):
+                    if ask_confirmation("~You are DELETING event~"):
                         timetable.remove(old_event)
-                        print("Event deleted successfully")
+                        print("RESULT: Event deleted successfully")
                     else:
-                        print("Action aborted")
+                        print("RESULT: Action aborted")
                     continue
                 elif choice == "2":  # Update Event
                     # Delete chosen event anyway to run loop checking availability
@@ -114,13 +116,14 @@ def main():
                 # Get user input for new event
                 tries = True
                 while tries:
+                    print("### Input new info. Skip if not change")
                     new_event = ask_info(
                         {
-                            "title": "New Title (Skip if not change): ",
-                            "day": "New Day (Skip if not change): ",
-                            "start": "New Time Start (Skip if not change): ",
-                            "end": "New Time End (Skip if not change): ",
-                            "location": "New Location (Skip if not change): ",
+                            "title": " - New Title: ",
+                            "day": " - New Day: ",
+                            "start": " - New Time Start: ",
+                            "end": " - New Time End: ",
+                            "location": " - New Location: ",
                         },
                         allow_blank=True,
                     )
@@ -129,24 +132,22 @@ def main():
                         k: v if v else old_event[k] for k, v in new_event.items()
                     }
                     if is_available(timetable, new_event):
-                        if ask_confirmation("You are UPDATING event."):
+                        if ask_confirmation("~You are UPDATING event~"):
                             timetable.append(new_event)
-                            print("Event Updated successfully")
+                            print("RESULT: Event updated successfully")
                         else:
                             timetable.append(old_event)
-                            print("Action aborted")
+                            print("RESULT: Action aborted")
                         tries = False
                     else:
-                        print(
-                            "Event is in the timeframe of another one. Please try again!"
-                        )
+                        print("ERROR! Event is in the timeframe of another one")
 
             case "5":  # Print full timetable
                 line_template = "{:5}|{:10}|{:10}|{:10}|{:10}|{:10}|{:10}|{:9}"
-                print_header(days)
-                print_offwork_events(line_template, timetable, days, mode="before")
-                print_working_events(line_template, timetable, days)
-                print_offwork_events(line_template, timetable, days, mode="after")
+                print_tb_header(days)
+                print_tb_offworks(line_template, timetable, days, mode="before")
+                print_tb_working(line_template, timetable, days)
+                print_tb_offworks(line_template, timetable, days, mode="after")
             case "6":  # Save Timetable
                 pass
             case "7":
@@ -155,11 +156,6 @@ def main():
                     print("Data load successfully!")
                 else:
                     print("Load Data failed!")
-            case "9":
-                day = input("Day: ")
-                start = _parse_time(input("Time: "))
-                events = _find_events(timetable, day=day, start=start)
-                _edit_field(timetable, events[0], location="s")
             case _:
                 print("Invalid Choice. Please select again!")
                 continue
@@ -222,7 +218,7 @@ def ask_info(fields: dict[str, str], allow_blank: bool = False) -> dict[str, str
                     pass
                 else:
                     try:
-                        value = _parse_time(value)
+                        value = parse_time(value)
                     except Exception as e:
                         raise e
 
@@ -235,13 +231,15 @@ def ask_info(fields: dict[str, str], allow_blank: bool = False) -> dict[str, str
     return result
 
 
+# No need for this func
+# TODO: refactor it to main again
 def ask_search_terms() -> dict[str, str]:
     """Use for finding events"""
     print(" a. Day and Start time")
     print(" b. Day only")
     print(" c. Title")
     print(" d. Location")
-    choice = input("Choice: ")
+    choice = input(" - Enter your choice: ")
     try:
         match choice:
             case "a":
@@ -253,43 +251,20 @@ def ask_search_terms() -> dict[str, str]:
             case "d":
                 search_term = ask_info({"location": "Location: "})
             case _:
-                raise ValueError("Invalid Choice! Please select again")
+                raise ValueError("ERROR! Invalid Choice")
     except Exception as e:
         raise e
 
     return search_term
 
 
-# TODO: Delete
-def _is_day(day: str) -> bool:
-    """Validate day input"""
-    if day.lower().strip() in [
-        "monday",
-        "mon",
-        "tuesday",
-        "tue",
-        "wednesday",
-        "wed",
-        "thursday",
-        "thu",
-        "friday",
-        "fri",
-        "saturday",
-        "sat",
-        "sunday",
-        "sun",
-    ]:
-        return True
-    return False
-
-
-def _parse_time(time: str) -> str:
-    """Parse time in HH:mmAM/PM format, return empty string if invalid input"""
+def parse_time(time: str) -> str:
+    """Parse time to HH:mmAM/PM format"""
     txt = time.strip()
     # Check for AM/PM
     period = txt[-2:].lower()
     if period not in ["am", "pm"]:
-        raise ValueError("Invalid! Must have am or pm")
+        raise ValueError("ERROR! TIME must have am or pm")
 
     # Get hour and minute
     match txt[:-2].split(":"):
@@ -299,23 +274,27 @@ def _parse_time(time: str) -> str:
             hh = hh
             mm = "00"
         case _:
-            raise ValueError("Invald! Wrong HH:mm format")
+            raise ValueError("ERROR! Time not in HH:mm format")
 
     # Compare hour and minute in range
     if not (0 < int(hh) <= 12 and 0 <= int(mm) <= 59):
-        raise ValueError("Invalid! Hour or Minute not in valid range")
+        raise ValueError("ERROR! Hour or Minute not in valid range")
 
+    # example return value: 7:00am, 10:15pm
     return f"{hh}:{mm.rjust(2,'0')}{period}"
 
 
 def _convert_time(time: str) -> int:
     """Convert time formatted as HH:mm am/pm into int for numeric comparison"""
-    hh, mm = [t.strip() for t in time[:-2].split(":")]
-    if time[-2:] == "pm" and (hh := int(hh)) < 12:
-        hh += 12
-    elif time[-2:] == "am" and int(hh) == 12:
-        hh = 0
-    return int(f"{hh}{mm}")
+    try:
+        hh, mm = [t.strip() for t in time[:-2].split(":")]
+        if time[-2:] == "pm" and (hh := int(hh)) < 12:
+            hh += 12
+        elif time[-2:] == "am" and int(hh) == 12:
+            hh = 0
+        return int(f"{hh}{mm}")
+    except ValueError | IndexError:
+        raise ValueError("ERROR! Time not in HH:mm format")
 
 
 def is_available(timetable: list[dict[str, str]], new_event: dict[str, str]) -> bool:
@@ -351,7 +330,7 @@ def _find_events(timetable: list[dict[str, str]], **kwargs) -> list[dict[str, st
             # Find all events from start-end timeframe
             # Use for printing timetable
             events = []
-            cap_start, cap_end = [_convert_time(_parse_time(t)) for t in (start, end)]
+            cap_start, cap_end = [_convert_time(parse_time(t)) for t in (start, end)]
             for event in timetable:
                 if (
                     event["day"].lower() == day.lower()
@@ -366,7 +345,8 @@ def _find_events(timetable: list[dict[str, str]], **kwargs) -> list[dict[str, st
             events = [
                 event
                 for event in timetable
-                if event["start"] == _convert_time(start) and event["day"] == day
+                if event["start"] == _convert_time(parse_time(start))
+                and event["day"].lower() == day.lower()
             ]
         case {"day": val}:
             events = [
@@ -385,80 +365,8 @@ def _find_events(timetable: list[dict[str, str]], **kwargs) -> list[dict[str, st
     return events
 
 
-def update_event(timetable: list[dict[str, str]]) -> None:
-    # Ask day
-    day = input("Day (e.g. monday, tue): ").lower()
-    if not (_is_day(day)):
-        print("Invalid input! Wrong format")
-        return
-
-    # Ask time
-    start = _parse_time(input("Time start (e.g. 7am, 10:30pm): "))
-    if not start:
-        print("Invalid input! Wrong format")
-        return
-
-    try:
-        event = _find_events(timetable, day=day, start=start)[0]
-    except IndexError:
-        print("No event found!")
-        return
-
-    new_title = input("New Title (Skip if not change): ") or event["title"]
-    new_day = input("New Day (Skip if not change): ") or event["day"]
-    new_start = (
-        _parse_time(input("New Time Start (Skip if not change): ")) or event["start"]
-    )
-    new_end = _parse_time(input("New Time End (Skip if not change): ")) or event["end"]
-    new_loc = input("New Location (Skip if not change): ") or event.get("location")
-
-    new_event = {"title": new_title, "day": new_day, "start": new_start, "end": new_end}
-    if new_loc:
-        new_event["location"] = new_loc
-
-    # Remove said event from loop
-    timetable.remove(event)
-    if is_available(timetable, new_event):
-        timetable.append(new_event)
-        print("Event updated succesfully")
-    else:
-        timetable.append(event)
-        print("Event not updated")
-    return
-
-
-def _edit_field(
-    timetable: list[dict[str, str]], event: dict[str, str], **kwargs
-) -> dict[str, str]:
-    match kwargs:
-        case {"title": val}:
-            event["title"] = val
-            print("Title is edited")
-            return {"title": val}
-        case {"location": val}:
-            event["location"] = val
-            print("Location is edited")
-            return {"location": val}
-        case {"day": day}:
-            new_event = event.copy()
-            new_event.update(day=day)
-            if is_available(timetable, new_event):
-                print("Day is edited")
-                event["day"] = day
-                return {"day": day}
-            else:
-                print("There is another event scheduled in the same timeframe!")
-                choice = input("Do you want to update new time (y/n)? ").lower()
-                if choice != "y":
-                    return _edit_field(timetable, event, day=day, start=None, end=None)
-        case {
-            "day": day,
-        }:
-            ...
-
-
 def load_timetable(filename: str) -> list[dict[str, str]]:
-    """Load timetable from txt file and return empty list if fail"""
+    """Load timetable from txt file"""
     with open(filename, "r") as f:
         lines = f.read().splitlines()
         headers = lines[0].split("\t")
@@ -470,18 +378,17 @@ def load_timetable(filename: str) -> list[dict[str, str]]:
 
 
 def save_timetable(timetable: list[dict[str, str]], filename: str) -> None:
-    """Save timetable into txt file, separator is \, for each field"""
+    """Save timetable into txt file, separator is \t for each field"""
     with open(filename, "w", encoding="utf-8") as f:
         # Write Headers
-        f.write("\,".join(timetable[0].keys()) + "\n")
+        f.write("\t".join(timetable[0].keys()) + "\n")
 
         # Write data
-        f.writelines(["\,".join(event.values()) + "\n" for event in timetable])
+        f.writelines(["\t".join(event.values()) + "\n" for event in timetable])
 
 
 def print_events(events: list[dict[str, str]]) -> None:
     """Print events in table format"""
-    print("-" * 80)
     # Print Header
     print(
         "{:^4}|{:^24}|{:^5}|{:^9}|{:^9}|{:^24}".format(
@@ -505,13 +412,13 @@ def print_events(events: list[dict[str, str]]) -> None:
     print("|".join(("-" * 4, "-" * 24, "-" * 5, "-" * 9, "-" * 9, "-" * 24)))
 
 
-def print_header(days: list[str]) -> None:
+def print_tb_header(days: list[str]) -> None:
     """Print Header for timetable, including an empty col for time and 7 cols for respective days"""
     print(" " * 4, "|{:^10}|{:^10}|{:^10}|{:^10}|{:^10}|{:^10}|{:^9}".format(*days))
     print(("-" * 5 + ("|" + "-" * 10) * 7)[:80])
 
 
-def print_offwork_events(
+def print_tb_offworks(
     line_template: str, timetable: list[dict[str, str]], days: list[str], mode: str
 ) -> None:
     """Print offwork events before 9am and after 5pm periods"""
@@ -524,7 +431,7 @@ def print_offwork_events(
         start = "5pm"
         end = "11:59pm"
     else:
-        raise ValueError("Incorrect mode")
+        raise ValueError("ERROR! Incorrect mode")
 
     for day in days:
         events_2_print = _find_events(timetable, day=day, start=start, end=end)
@@ -565,7 +472,7 @@ def get_multihour_events(timetable):
     return multi_hour_events
 
 
-def print_working_events(
+def print_tb_working(
     line_template: str, timetable: list[dict[str, str]], days: list[str]
 ) -> None:
     work_hours = ["9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", "5pm"]
@@ -589,8 +496,8 @@ def print_working_events(
                 start_cap, end_cap = multihour_events[j]["multi_timeframe"].split("-")
                 if (
                     multihour_events[j]["day"].lower() == day.lower()
-                    and _convert_time(_parse_time(work_hours[i])) == int(start_cap)
-                    and _convert_time(_parse_time(work_hours[i + 1])) == int(end_cap)
+                    and _convert_time(parse_time(work_hours[i])) == int(start_cap)
+                    and _convert_time(parse_time(work_hours[i + 1])) == int(end_cap)
                 ):
                     multihour_event = multihour_events[j]
                     j = -1
