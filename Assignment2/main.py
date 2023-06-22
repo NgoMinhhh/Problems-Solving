@@ -79,7 +79,7 @@ def main():
             case "2" | "3" | "4":  # Update Event / Delete Event / Find Events
                 # Ask user for method to search for events
                 print("=> Select Search Options")
-                search_options: dict[str, str] = [
+                search_options = [
                     "Day and Start Time",
                     "Day Only",
                     "Title",
@@ -194,9 +194,9 @@ def main():
                 filename = input(' - Filename: ')
                 try:
                     staging_tb = load_timetable(filename)
-                    # timetable = staging_tb
                 except Exception as e:
                     print(e)
+                    continue
                 # Check validity of save file    
                 if _is_valid(staging_tb):
                     if ask_confirmation("~You are IMPORTING new timetable. This action will overwrite existing timetable,"):
