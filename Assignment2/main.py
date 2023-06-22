@@ -123,6 +123,7 @@ def main():
                     continue
 
                 # Print out found events
+                sort_timetable(timetable,days)
                 print_events(events)
 
                 # Finish Find Events. Continue for update/delete event
@@ -200,7 +201,7 @@ def main():
                 if _is_valid(staging_tb):
                     if ask_confirmation("~You are IMPORTING new timetable. This action will overwrite existing timetable,"):
                         timetable = staging_tb
-                        sort_timetable(timetable)
+                        sort_timetable(timetable,days)
                         print("RESULT: Data load successfully!")
                     else:
                         print("RESULT: Action aborted")
@@ -228,7 +229,7 @@ def _is_valid(staging_tb:list[dict[str,str]]) -> bool:
     """Check validity of imported timetable"""
     temp_tb = []
     for temp_event in staging_tb:
-        if is_available(staging_tb,temp_event):
+        if is_available(temp_tb,temp_event):
             temp_tb.append(temp_event)
         else:
             return False
@@ -387,7 +388,7 @@ def is_available(timetable: list[dict[str, str]], new_event: dict[str, str]) -> 
         old_start = _convert_time(old_event["start"])
         old_end = _convert_time(old_event["end"])
         # New Event cannot start or end in existing event's timeframe
-        if old_start <= new_start <= old_end or old_start <= new_end <= old_end:
+        if old_start < new_start < old_end or old_start < new_end < old_end:
             return False
 
     return True
