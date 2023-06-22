@@ -21,14 +21,14 @@ def main():
         print(f"{' TIMETABLE MANAGEMENT ':=^80}")
         options: list[str] = [
             "0. Quit",
-            "1. Create New Event",
+            "1. Create Event",
             "2. Update Event",
             "3. Delete Event",
             "4. Find Events",
-            "5. Print Timetable",
-            "6. Save Timetable to file",
-            "7. Load Timetable to file",
-            "8. Set start day",
+            "5. Display Timetable",
+            "6. Export Timetable",
+            "7. Import Timetable",
+            "8. Set Week Start day",
         ]
         # To display options in two cols style
         # Left col for odd numbered, right col for even numbered options
@@ -40,19 +40,18 @@ def main():
                     continue
             except IndexError:
                 print("{:40}{:40}".format(options[i], ""))
-
+        print("-" * 80)
         # Ask for Choice
-        choice = input(" - Enter your choice: ")
-        print("-> " + options[int(choice)][3:].upper())
-
+        menu_choice = input(" - Enter your choice: ")
         # Match-Case instead of If-else for cleaner branching
-        match choice:
+        match menu_choice:
             case "0":  # Quit Program
                 if ask_confirmation("You are about to QUIT program."):
                     return
                 continue
             case "1":  # Create New Event
                 # Ask for all info to create a event
+                print("=> Input info for new event")
                 try:
                     event = ask_info(
                         {
@@ -69,7 +68,7 @@ def main():
 
                 # Check new event for availibility
                 if is_available(timetable, event):
-                    if ask_confirmation("~You are CREATING new event~"):
+                    if ask_confirmation("~You are ADDING new event~"):
                         timetable.append(event)
                         print("RESULT: Event created successfully")
                     else:
@@ -77,22 +76,59 @@ def main():
                 else:
                     print("ERROR! Event is in the timeframe of another one")
             case "2" | "3" | "4":  # Update Event / Delete Event / Find Events
+                # Ask user for method to search for events
+                print("=> Select Search Options")
+                search_options: dict[str, str] = [
+                    "Day and Start Time",
+                    "Day Only",
+                    "Title",
+                    "Location",
+                ]
+                print(
+                    "\n".join(
+                        [
+                            f" {i}. {search_options[i]}"
+                            for i in range(len(search_options))
+                        ]
+                    )
+                )
+
+                # Process user choice. Should choice be invalid, return to menu
+                search_choice = input(" - Enter your choie: ")
                 try:
-                    search_terms = ask_search_terms()
+                    match search_choice:
+                        case "0": # Day and Start will result in exactly 1 event or none at all
+                            search_terms = ask_info(
+                                {"day": "Day: ", "start": "Start time: "}
+                            )
+                        case "1" | "2" | "3": # other options will return more than 1 events or none at all
+                            search_field = search_options[int(search_choice)].split(
+                                " "
+                            )[0]
+                            search_terms = ask_info(
+                                {search_field.lower(): f" - {search_field}: "}
+                            )
+                        case _:
+                            print("ERROR! Invalid choice")
+                            continue
                 except Exception as e:
                     print(e)
                     continue
+
+                # Find Events that match selected criterion
                 events = _find_events(timetable, **search_terms)
                 if not events:
                     print("RESULT: No event found")
                     continue
 
+                # Print out found events
                 print_events(events)
-                # Finish Find Events
-                if choice not in ["2", "3"]:
+
+                # Finish Find Events. Continue for update/delete event
+                if menu_choice not in ["2", "3"]:
                     continue
 
-                # Ask for event ID
+                # Ask user for event ID to update/delete
                 tries = True
                 while tries:
                     try:
@@ -102,14 +138,14 @@ def main():
                     except IndexError | ValueError:
                         print("ERROR! Invalid choice")
 
-                if choice == "3":  # Delete Event
+                if menu_choice == "3":  # Delete Event
                     if ask_confirmation("~You are DELETING event~"):
                         timetable.remove(old_event)
                         print("RESULT: Event deleted successfully")
                     else:
                         print("RESULT: Action aborted")
                     continue
-                elif choice == "2":  # Update Event
+                elif menu_choice == "2":  # Update Event
                     # Delete chosen event anyway to run loop checking availability
                     timetable.remove(old_event)
 
@@ -144,22 +180,59 @@ def main():
 
             case "5":  # Print full timetable
                 line_template = "{:5}|{:10}|{:10}|{:10}|{:10}|{:10}|{:10}|{:9}"
+                print(f"{'TIMETABLE':=^80}")
                 print_tb_header(days)
                 print_tb_offworks(line_template, timetable, days, mode="before")
                 print_tb_working(line_template, timetable, days)
                 print_tb_offworks(line_template, timetable, days, mode="after")
-            case "6":  # Save Timetable
+            case "6":  # TODO: Export Timetable 
                 pass
-            case "7":
-                timetable = load_timetable(r"Assignment2\timetable copy.txt")
-                if timetable:
-                    print("Data load successfully!")
+            case "7": # Import Timetable
+                print("=> Load Timetable data")
+                filename = input(' - Filename: ')
+                try:
+                    staging_tb = load_timetable(filename)
+                except Exception as e:
+                    print(e)
+                # Check validity of save file    
+                if _is_valid(staging_tb):
+                    if ask_confirmation("~You are IMPORTING new timetable. This action will overwrite existing timetable,"):
+                        timetable = staging_tb
+                        sort_timetable(timetable)
+                        print("RESULT: Data load successfully!")
+                    else:
+                        print("RESULT: Action aborted")
                 else:
-                    print("Load Data failed!")
+                    print("ERROR: Timetable data is not valid")
+            case "8":  # Change Week start day
+                print("=> Change Week Start")
+                print(f"## Current Week Start day is {days[0].upper()}DAY")
+                print(f"0. Cancel\n1. Change to {'Monday' if days[0]== 'Sun' else 'Sunday'}")
+                change_choice = input(" - Enter your choice: ")
+                if change_choice == "1":
+                    if ask_confirmation("~You are CHANGING Week Start Day~"):
+                        if days[0] == "Mon":
+                            days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+                        else:
+                            days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                elif change_choice != "0":
+                    print("ERROR! Invalid Choice")
             case _:
-                print("Invalid Choice. Please select again!")
+                print("ERROR! Invalid Choice. Please select again!")
                 continue
         print()
+
+def _is_valid(staging_tb:list[dict[str,str]]) -> bool:
+    """Check validity of imported timetable"""
+    temp_tb = []
+    for temp_event in staging_tb:
+        if is_available(staging_tb,temp_event):
+            temp_tb.append(temp_event)
+        else:
+            return False
+    else:
+        return True
+            
 
 
 def ask_info(fields: dict[str, str], allow_blank: bool = False) -> dict[str, str]:
@@ -182,9 +255,7 @@ def ask_info(fields: dict[str, str], allow_blank: bool = False) -> dict[str, str
         match field:
             case "title":
                 if not value and not allow_blank:
-                    raise ValueError(
-                        f"Invalid! {field.capitalize()} must not be blank!"
-                    )
+                    raise ValueError(f"ERROR! Title must not be blank!")
             case "location":
                 pass
             case "day":
@@ -206,14 +277,10 @@ def ask_info(fields: dict[str, str], allow_blank: bool = False) -> dict[str, str
                 )
                 value = value.lower()
                 if value not in valid_days and not allow_blank:
-                    raise ValueError(
-                        "Invalid! Only accept full name or first 3 letter of day"
-                    )
+                    raise ValueError("ERROR! Only accept full day or first 3 letters")
             case "start" | "end":
                 if not value and not allow_blank:
-                    raise ValueError(
-                        f"Invalid! {field.capitalize()} must not be blank!"
-                    )
+                    raise ValueError(f"ERROR! {field.capitalize()} must not be blank!")
                 elif not value and allow_blank:
                     pass
                 else:
@@ -227,7 +294,7 @@ def ask_info(fields: dict[str, str], allow_blank: bool = False) -> dict[str, str
     # Check if end time is later than start time
     if result.get("start") and result.get("end"):
         if _convert_time(result["start"]) > _convert_time(result["end"]):
-            raise ValueError("Invalid! End time must be later than start time")
+            raise ValueError("ERROR! End time must be later than start time")
     return result
 
 
@@ -367,16 +434,23 @@ def _find_events(timetable: list[dict[str, str]], **kwargs) -> list[dict[str, st
 
 def load_timetable(filename: str) -> list[dict[str, str]]:
     """Load timetable from txt file"""
-    with open(filename, "r") as f:
-        lines = f.read().splitlines()
-        headers = lines[0].split("\t")
-        tb = [
-            {headers[i]: val for i, val in enumerate(line.split("\t"))}
-            for line in lines[1:]
-        ]
-    return tb
-
-
+    try:
+        with open(filename, "r") as f:
+            lines = f.read().splitlines()
+            headers = lines[0].split("\t")
+            tb: list[dict[str, str]] = []
+            for line in lines[1:]:
+                event :dict[str, str] = {}
+                event_data = line.split('\t')
+                for i in range(len(event_data)):
+                    event[headers[i]] = event_data[i] 
+                tb.append(event)
+        return tb
+    except FileNotFoundError:
+        raise FileNotFoundError("ERROR! File cannot be found")
+    except LookupError:
+        raise ValueError(f"ERROR! Cannot load line {i+1}")
+    
 def save_timetable(timetable: list[dict[str, str]], filename: str) -> None:
     """Save timetable into txt file, separator is \t for each field"""
     with open(filename, "w", encoding="utf-8") as f:
@@ -544,7 +618,7 @@ def print_tb_working(
 def ask_confirmation(prompt: str) -> bool:
     """Ask user for confirmation, return True/False"""
     while True:
-        answer = input(f"{prompt} Confirm ? (y/n): ").lower()
+        answer = input(f"{prompt}\n - Confirm ? (y/n): ").lower()
         if answer == "y":
             return True
         elif answer == "n":
