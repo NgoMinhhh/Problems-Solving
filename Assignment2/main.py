@@ -5,6 +5,7 @@
 # This is my own work as defined by
 #   the University's Academic Misconduct Policy.
 
+#TODO: write display function
 
 def main():
     # Display Author info
@@ -192,6 +193,7 @@ def main():
                 filename = input(' - Filename: ')
                 try:
                     staging_tb = load_timetable(filename)
+                    # timetable = staging_tb
                 except Exception as e:
                     print(e)
                 # Check validity of save file    
@@ -454,11 +456,13 @@ def load_timetable(filename: str) -> list[dict[str, str]]:
 def save_timetable(timetable: list[dict[str, str]], filename: str) -> None:
     """Save timetable into txt file, separator is \t for each field"""
     with open(filename, "w", encoding="utf-8") as f:
+        headers = ('title','day','start','end','location')
         # Write Headers
-        f.write("\t".join(timetable[0].keys()) + "\n")
+        f.write("\t".join(header + "\n" for header in headers))
 
-        # Write data
-        f.writelines(["\t".join(event.values()) + "\n" for event in timetable])
+        # Write data only accepting values whose key match headers
+        for event in timetable:
+            f.write('\t'.join(val  for key, val in event.items() if key in headers))
 
 
 def print_events(events: list[dict[str, str]]) -> None:
@@ -541,7 +545,7 @@ def get_multihour_events(timetable):
             start_cap = _convert_time(event["start"]) // 100 * 100
             end_cap = start_cap + 100
             event["multi_timeframe"] = f"{start_cap}-{end_cap}"  # To search for
-            event["border_track"] = round(time_span / 200)
+            event["border_track"] = event['max_border'] = round(time_span / 200)
             multi_hour_events.append(event)
     return multi_hour_events
 
@@ -580,7 +584,7 @@ def print_tb_working(
 
             if multihour_event:
                 # There is one multi hour event and will have no other events
-                if multihour_event["border_track"] > 0:
+                if multihour_event["border_track"] ==  multihour_event["max_border"]:
                     line1.append("-" + multihour_event["title"][:9])
                     line2.append(multihour_event["location"][:9])
                     bot_border += (
@@ -588,16 +592,24 @@ def print_tb_working(
                         + ".|"
                         or " " * 10
                     )
-                    multihour_event["border_track"] = 0
+                    multihour_event["border_track"] -=1
                     multihour_event["multi_timeframe"] = f"{end_cap}-{int(end_cap)+100}"
-                else:
+                elif multihour_event["border_track"] == 0:
+                    line1.append("")
+                    line2.append("")
+                    bot_border += "-" * 10 + "|"
+                elif multihour_event["border_track"] <  multihour_event["max_border"]:
                     line1.append("")
                     line2.append("")
                     bot_border += " " * 10 + "|"
+                    multihour_event["border_track"] -=1
+                    multihour_event["multi_timeframe"] = f"{end_cap}-{int(end_cap)+100}"
+                
+                
             elif len(one_hour_events) == 1:
                 # There is one event in this timeframe
                 line1.append("-" + one_hour_events[0]["title"][:9])
-                line2.append("-" + one_hour_events[0]["location"][:9])
+                line2.append(one_hour_events[0]["location"][:9])
                 bot_border += "-" * 10 + "|"
             elif len(one_hour_events) == 2:
                 # There are more than 2 events scheduled in this timeframe
