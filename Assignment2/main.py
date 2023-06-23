@@ -423,15 +423,17 @@ def print_tb_offworks(
                 line1.append("")
                 line2.append("")
             case 1:
-                line1.append(events_2_print[0]["title"][:9])
+                line1.append(shorten_info("title", events_2_print[0]["title"]))
                 line2.append(
-                    f'{events_2_print[0]["start"]} - {events_2_print[0]["end"]}'[:9]
+                    shorten_info("start", events_2_print[0]["start"])
+                    + "-"
+                    + shorten_info("end", events_2_print[0]["end"])
                 )
             case 2:
-                line1.append(events_2_print[0]["title"][:9])
-                line2.append(events_2_print[1]["title"][:9])
+                line1.append("-" + shorten_info("title", events_2_print[0]["title"]))
+                line2.append("-" + shorten_info("title", events_2_print[1]["title"]))
             case _:
-                line1.append(events_2_print[0]["title"][:9])
+                line1.append("-" + shorten_info("title", events_2_print[0]["title"]))
                 line2.append("etc.")
 
     print(line_template.format(*line1))
@@ -452,7 +454,7 @@ def print_tb_working(
             return
         line1 = [work_hours[i]]
         line2 = [""]
-        bot_border = "-" * 5 + "|"
+        bot_border = ["-" * 5]
 
         for day in days:
             one_hour_events = _find_events(
@@ -476,45 +478,50 @@ def print_tb_working(
             if multihour_event:
                 # There is one multi hour event and will have no other events
                 if multihour_event["border_track"] == multihour_event["max_border"]:
-                    line1.append("-" + multihour_event["title"][:9])
-                    line2.append(multihour_event["location"][:9])
-                    bot_border += (
-                        f'{multihour_event["start"]} - {multihour_event["end"]}'[:9]
-                        + ".|"
-                        or " " * 10
+                    line1.append(shorten_info("title", multihour_event["title"], 10))
+                    line2.append(
+                        shorten_info("location", multihour_event["location"], 10)
                     )
+                    bot_border.append(
+                        shorten_info("start", multihour_event["start"])
+                        + "-"
+                        + shorten_info("end", multihour_event["end"])
+                    )
+
                     multihour_event["border_track"] -= 1
                     multihour_event["multi_timeframe"] = f"{end_cap}-{int(end_cap)+100}"
                 elif multihour_event["border_track"] == 0:
                     line1.append("")
                     line2.append("")
-                    bot_border += "-" * 10 + "|"
+                    bot_border.append("-" * 10)
                 elif multihour_event["border_track"] < multihour_event["max_border"]:
                     line1.append("")
                     line2.append("")
-                    bot_border += " " * 10 + "|"
+                    bot_border.append(" " * 10)
                     multihour_event["border_track"] -= 1
                     multihour_event["multi_timeframe"] = f"{end_cap}-{int(end_cap)+100}"
 
             elif len(one_hour_events) == 1:
                 # There is one event in this timeframe
-                line1.append("-" + one_hour_events[0]["title"][:9])
-                line2.append(one_hour_events[0]["location"][:9])
-                bot_border += "-" * 10 + "|"
+                line1.append(shorten_info("title", one_hour_events[0]["title"], 10))
+                line2.append(
+                    shorten_info("location", one_hour_events[0]["location"], 10)
+                )
+                bot_border.append("-" * 10)
             elif len(one_hour_events) == 2:
                 # There are more than 2 events scheduled in this timeframe
-                line1.append("-" + one_hour_events[0]["title"][:9])
-                line2.append("-" + one_hour_events[1]["title"][:9])
-                bot_border += "-" * 10 + "|"
+                line1.append("-" + shorten_info("title", one_hour_events[0]["title"]))
+                line2.append("-" + shorten_info("title", one_hour_events[1]["title"]))
+                bot_border.append("-" * 10)
             else:
                 line1.append("")
                 line2.append("")
-                bot_border += "-" * 10 + "|"
+                bot_border.append("-" * 10)
 
         # Print all output line
         print(line_template.format(*line1)[:80])
         print(line_template.format(*line2)[:80])
-        print(bot_border[:80])
+        print(line_template.format(*bot_border)[:80])
 
 
 def get_multihour_events(timetable):
@@ -526,7 +533,9 @@ def get_multihour_events(timetable):
             start_cap = _convert_time(event["start"]) // 100 * 100
             end_cap = start_cap + 100
             event["multi_timeframe"] = f"{start_cap}-{end_cap}"  # To search for
-            event["border_track"] = event["max_border"] = round(time_span / 200)
+            event["border_track"] = event["max_border"] = (
+                end_cap - start_cap
+            ) / 100 - 1
             multi_hour_events.append(event)
     return multi_hour_events
 
@@ -626,6 +635,24 @@ def sort_timetable(timetable: list[dict[str, str]], days: list[str]) -> None:
     timetable.sort(
         key=lambda e: (ordered_days[e["day"].lower()], _convert_time(e["start"]))
     )
+
+
+def shorten_info(field: str, value: str, max_width: int = 9) -> str:
+    """To display value in timetable"""
+    match field:
+        case "title" | "location":
+            if len(value) > max_width:
+                result = f"{value[:max_width-1]}."
+            else:
+                result = f"{value}"
+        case "start" | "end":  # 7:00am -> 7am, 7:40am -> 7:40
+            hh, mm = value[:-2].split(":")
+            result = f"{int(hh)}"
+            if int(mm) != 0:  # add minute if there is one
+                result += f":{mm}"
+            if field == "end":  # add period (am/pm) if its end time
+                result += f"{value[-2:]}"
+    return result
 
 
 if __name__ == "__main__":
