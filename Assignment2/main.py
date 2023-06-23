@@ -200,8 +200,7 @@ def main():
                 # Check validity of save file
                 if _is_valid(staging_tb):
                     if ask_confirmation(
-                        """~You are IMPORTING new timetable~\n
-                        ## This action will overwrite existing timetable~"""
+                        """~You are IMPORTING new timetable~\n## This action will overwrite existing timetable~"""
                     ):
                         timetable = staging_tb
                         sort_timetable(timetable, days)
@@ -231,16 +230,16 @@ def main():
         print()
 
 
-def _is_valid(staging_tb: list[dict[str, str]]) -> bool:
-    """Check validity of imported timetable"""
-    temp_tb = []
-    for temp_event in staging_tb:
-        if is_available(temp_tb, temp_event):
-            temp_tb.append(temp_event)
-        else:
+def ask_confirmation(prompt: str) -> bool:
+    """Ask user for confirmation, return True/False"""
+    while True:
+        answer = input(f"{prompt}\n - Confirm ? (y/n): ").lower()
+        if answer == "y":
+            return True
+        elif answer == "n":
             return False
-    else:
-        return True
+        else:
+            continue
 
 
 def ask_info(fields: dict[str, str], allow_blank: bool = False) -> dict[str, str]:
@@ -306,70 +305,16 @@ def ask_info(fields: dict[str, str], allow_blank: bool = False) -> dict[str, str
     return result
 
 
-# No need for this func
-# TODO: refactor it to main again
-def ask_search_terms() -> dict[str, str]:
-    """Use for finding events"""
-    print(" a. Day and Start time")
-    print(" b. Day only")
-    print(" c. Title")
-    print(" d. Location")
-    choice = input(" - Enter your choice: ")
-    try:
-        match choice:
-            case "a":
-                search_term = ask_info({"day": "Day: ", "start": "Start: "})
-            case "a":
-                search_term = ask_info({"day": "Day: "})
-            case "c":
-                search_term = ask_info({"title": "Title: "})
-            case "d":
-                search_term = ask_info({"location": "Location: "})
-            case _:
-                raise ValueError("ERROR! Invalid Choice")
-    except Exception as e:
-        raise e
-
-    return search_term
-
-
-def parse_time(time: str) -> str:
-    """Parse time to HH:mmAM/PM format"""
-    txt = time.strip()
-    # Check for AM/PM
-    period = txt[-2:].lower()
-    if period not in ["am", "pm"]:
-        raise ValueError("ERROR! TIME must have am or pm")
-
-    # Get hour and minute
-    match txt[:-2].split(":"):
-        case (hh, mm):
-            hh, mm = (hh, mm)
-        case (hh,):
-            hh = hh
-            mm = "00"
-        case _:
-            raise ValueError("ERROR! Time not in HH:mm format")
-
-    # Compare hour and minute in range
-    if not (0 < int(hh) <= 12 and 0 <= int(mm) <= 59):
-        raise ValueError("ERROR! Hour or Minute not in valid range")
-
-    # example return value: 7:00am, 10:15pm
-    return f"{hh}:{mm.rjust(2,'0')}{period}"
-
-
-def _convert_time(time: str) -> int:
-    """Convert time formatted as HH:mm am/pm into int for numeric comparison"""
-    try:
-        hh, mm = [t.strip() for t in time[:-2].split(":")]
-        if time[-2:] == "pm" and (hh := int(hh)) < 12:
-            hh += 12
-        elif time[-2:] == "am" and int(hh) == 12:
-            hh = 0
-        return int(f"{hh}{mm}")
-    except (ValueError, IndexError):
-        raise ValueError("ERROR! Time not in HH:mm format")
+def _is_valid(staging_tb: list[dict[str, str]]) -> bool:
+    """Check validity of imported timetable"""
+    temp_tb = []
+    for temp_event in staging_tb:
+        if is_available(temp_tb, temp_event):
+            temp_tb.append(temp_event)
+        else:
+            return False
+    else:
+        return True
 
 
 def is_available(timetable: list[dict[str, str]], new_event: dict[str, str]) -> bool:
@@ -399,77 +344,30 @@ def is_available(timetable: list[dict[str, str]], new_event: dict[str, str]) -> 
     return True
 
 
-def _find_events(timetable: list[dict[str, str]], **kwargs) -> list[dict[str, str]]:
-    match kwargs:
-        case {"day": day, "start": start, "end": end}:
-            # Find all events from start-end timeframe
-            # Use for printing timetable
-            events = []
-            cap_start, cap_end = [_convert_time(parse_time(t)) for t in (start, end)]
-            for event in timetable:
-                if (
-                    event["day"].lower() == day.lower()
-                    and cap_start <= _convert_time(event["start"]) < cap_end
-                    and _convert_time(event["end"]) <= cap_end
-                ):
-                    events.append(event)
+def parse_time(time: str) -> str:
+    """Parse time to HH:mmAM/PM format"""
+    txt = time.strip()
+    # Check for AM/PM
+    period = txt[-2:].lower()
+    if period not in ["am", "pm"]:
+        raise ValueError("ERROR! TIME must have am or pm")
 
-        case {"day": day, "start": start}:
-            # Should find one event only and return a one-item list to match interface
-            # Or return an empty list
-            events = [
-                event
-                for event in timetable
-                if event["start"] == _convert_time(parse_time(start))
-                and event["day"].lower() == day.lower()
-            ]
-        case {"day": val}:
-            events = [
-                event for event in timetable if val.lower() in event["day"].lower()
-            ]
-        case {"title": val}:
-            events = [
-                event for event in timetable if val.lower() in event["title"].lower()
-            ]
-        case {"location": val}:
-            events = [
-                event for event in timetable if val.lower() in event["location"].lower()
-            ]
+    # Get hour and minute
+    match txt[:-2].split(":"):
+        case (hh, mm):
+            hh, mm = (hh, mm)
+        case (hh,):
+            hh = hh
+            mm = "00"
         case _:
-            events = []
-    return events
+            raise ValueError("ERROR! Time not in HH:mm format")
 
+    # Compare hour and minute in range
+    if not (0 < int(hh) <= 12 and 0 <= int(mm) <= 59):
+        raise ValueError("ERROR! Hour or Minute not in valid range")
 
-def load_timetable(filename: str) -> list[dict[str, str]]:
-    """Load timetable from txt file"""
-    try:
-        with open(filename, "r") as f:
-            lines = f.read().splitlines()
-            headers = lines[0].split("\t")
-            tb: list[dict[str, str]] = []
-            for line in lines[1:]:
-                event: dict[str, str] = {}
-                event_data = line.split("\t")
-                for i in range(len(event_data)):
-                    event[headers[i]] = event_data[i]
-                tb.append(event)
-        return tb
-    except FileNotFoundError:
-        raise FileNotFoundError("ERROR! File cannot be found")
-    except LookupError:
-        raise ValueError(f"ERROR! Cannot load line {i+1}")
-
-
-def save_timetable(timetable: list[dict[str, str]], filename: str) -> None:
-    """Save timetable into txt file, separator is \t for each field"""
-    with open(filename, "w", encoding="utf-8") as f:
-        headers = ("title", "day", "start", "end", "location")
-        # Write Headers
-        f.write("\t".join(header + "\n" for header in headers))
-
-        # Write data only accepting values whose key match headers
-        for event in timetable:
-            f.write("\t".join(val for key, val in event.items() if key in headers))
+    # example return value: 7:00am, 10:15pm
+    return f"{hh}:{mm.rjust(2,'0')}{period}"
 
 
 def print_events(events: list[dict[str, str]]) -> None:
@@ -543,20 +441,6 @@ def print_tb_offworks(
         print(("-" * 5 + ("|" + "-" * 10) * 7)[:80])
 
 
-def get_multihour_events(timetable):
-    multi_hour_events = []
-    for event in timetable:
-        # (1359 // 100 + 1) * 100)
-        time_span = _convert_time(event["end"]) - _convert_time(event["start"])
-        if time_span > 100:
-            start_cap = _convert_time(event["start"]) // 100 * 100
-            end_cap = start_cap + 100
-            event["multi_timeframe"] = f"{start_cap}-{end_cap}"  # To search for
-            event["border_track"] = event["max_border"] = round(time_span / 200)
-            multi_hour_events.append(event)
-    return multi_hour_events
-
-
 def print_tb_working(
     line_template: str, timetable: list[dict[str, str]], days: list[str]
 ) -> None:
@@ -565,7 +449,7 @@ def print_tb_working(
 
     for i in range(len(work_hours)):
         if i == len(work_hours) - 1:
-            return                
+            return
         line1 = [work_hours[i]]
         line2 = [""]
         bot_border = "-" * 5 + "|"
@@ -633,16 +517,104 @@ def print_tb_working(
         print(bot_border[:80])
 
 
-def ask_confirmation(prompt: str) -> bool:
-    """Ask user for confirmation, return True/False"""
-    while True:
-        answer = input(f"{prompt}\n - Confirm ? (y/n): ").lower()
-        if answer == "y":
-            return True
-        elif answer == "n":
-            return False
-        else:
-            continue
+def get_multihour_events(timetable):
+    multi_hour_events = []
+    for event in timetable:
+        # (1359 // 100 + 1) * 100)
+        time_span = _convert_time(event["end"]) - _convert_time(event["start"])
+        if time_span > 100:
+            start_cap = _convert_time(event["start"]) // 100 * 100
+            end_cap = start_cap + 100
+            event["multi_timeframe"] = f"{start_cap}-{end_cap}"  # To search for
+            event["border_track"] = event["max_border"] = round(time_span / 200)
+            multi_hour_events.append(event)
+    return multi_hour_events
+
+
+def _convert_time(time: str) -> int:
+    """Convert time formatted as HH:mm am/pm into int for numeric comparison"""
+    try:
+        hh, mm = [t.strip() for t in time[:-2].split(":")]
+        if time[-2:] == "pm" and (hh := int(hh)) < 12:
+            hh += 12
+        elif time[-2:] == "am" and int(hh) == 12:
+            hh = 0
+        return int(f"{hh}{mm}")
+    except (ValueError, IndexError):
+        raise ValueError("ERROR! Time not in HH:mm format")
+
+
+def _find_events(timetable: list[dict[str, str]], **kwargs) -> list[dict[str, str]]:
+    match kwargs:
+        case {"day": day, "start": start, "end": end}:
+            # Find all events from start-end timeframe
+            # Use for printing timetable
+            events = []
+            cap_start, cap_end = [_convert_time(parse_time(t)) for t in (start, end)]
+            for event in timetable:
+                if (
+                    event["day"].lower() == day.lower()
+                    and cap_start <= _convert_time(event["start"]) < cap_end
+                    and _convert_time(event["end"]) <= cap_end
+                ):
+                    events.append(event)
+
+        case {"day": day, "start": start}:
+            # Should find one event only and return a one-item list to match interface
+            # Or return an empty list
+            events = [
+                event
+                for event in timetable
+                if event["start"] == _convert_time(parse_time(start))
+                and event["day"].lower() == day.lower()
+            ]
+        case {"day": val}:
+            events = [
+                event for event in timetable if val.lower() in event["day"].lower()
+            ]
+        case {"title": val}:
+            events = [
+                event for event in timetable if val.lower() in event["title"].lower()
+            ]
+        case {"location": val}:
+            events = [
+                event for event in timetable if val.lower() in event["location"].lower()
+            ]
+        case _:
+            events = []
+    return events
+
+
+def load_timetable(filename: str) -> list[dict[str, str]]:
+    """Load timetable from txt file"""
+    try:
+        with open(filename, "r") as f:
+            lines = f.read().splitlines()
+            headers = lines[0].split("\t")
+            tb: list[dict[str, str]] = []
+            for line in lines[1:]:
+                event: dict[str, str] = {}
+                event_data = line.split("\t")
+                for i in range(len(event_data)):
+                    event[headers[i]] = event_data[i]
+                tb.append(event)
+        return tb
+    except FileNotFoundError:
+        raise FileNotFoundError("ERROR! File cannot be found")
+    except LookupError:
+        raise ValueError(f"ERROR! Cannot load line {i+1}")
+
+
+def save_timetable(timetable: list[dict[str, str]], filename: str) -> None:
+    """Save timetable into txt file, separator is \t for each field"""
+    with open(filename, "w", encoding="utf-8") as f:
+        headers = ("title", "day", "start", "end", "location")
+        # Write Headers
+        f.write("\t".join(header + "\n" for header in headers))
+
+        # Write data only accepting values whose key match headers
+        for event in timetable:
+            f.write("\t".join(val for key, val in event.items() if key in headers))
 
 
 def sort_timetable(timetable: list[dict[str, str]], days: list[str]) -> None:
