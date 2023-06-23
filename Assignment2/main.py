@@ -5,8 +5,6 @@
 # This is my own work as defined by
 #   the University's Academic Misconduct Policy.
 
-# TODO: write display function
-
 
 def main():
     # Display Author info
@@ -187,10 +185,17 @@ def main():
                 print_tb_offworks(line_template, timetable, days, mode="before")
                 print_tb_working(line_template, timetable, days)
                 print_tb_offworks(line_template, timetable, days, mode="after")
-            case "6":  # TODO: Export Timetable
-                pass
+            case "6":  # Export Timetable
+                print("=> Export Timetable data")
+                print("## File extension is txt. Line separator is tab")
+                filename = input(" - Filename: ")
+                try:
+                    save_timetable(timetable,filename)
+                except Exception as e:
+                    print('ERROR!',e)
             case "7":  # Import Timetable
-                print("=> Load Timetable data")
+                print("=> Import Timetable data")
+                print("## File extension must be txt. Line separator must be tab")
                 filename = input(" - Filename: ")
                 try:
                     staging_tb = load_timetable(filename)
@@ -464,7 +469,7 @@ def print_tb_working(
             multihour_event = {}
             j = len(multihour_events) - 1
             while j >= 0:
-                start_cap, end_cap = multihour_events[j]["multi_timeframe"].split("-")
+                start_cap, end_cap = multihour_events[j]["time_caps"].split("-")
                 if (
                     multihour_events[j]["day"].lower() == day.lower()
                     and _convert_time(parse_time(work_hours[i])) == int(start_cap)
@@ -489,7 +494,7 @@ def print_tb_working(
                     )
 
                     multihour_event["border_track"] -= 1
-                    multihour_event["multi_timeframe"] = f"{end_cap}-{int(end_cap)+100}"
+                    multihour_event["time_caps"] = f"{end_cap}-{int(end_cap)+100}"
                 elif multihour_event["border_track"] == 0:
                     line1.append("")
                     line2.append("")
@@ -499,7 +504,7 @@ def print_tb_working(
                     line2.append("")
                     bot_border.append(" " * 10)
                     multihour_event["border_track"] -= 1
-                    multihour_event["multi_timeframe"] = f"{end_cap}-{int(end_cap)+100}"
+                    multihour_event["time_caps"] = f"{end_cap}-{int(end_cap)+100}"
 
             elif len(one_hour_events) == 1:
                 # There is one event in this timeframe
@@ -528,15 +533,21 @@ def get_multihour_events(timetable):
     multi_hour_events = []
     for event in timetable:
         # (1359 // 100 + 1) * 100)
-        time_span = _convert_time(event["end"]) - _convert_time(event["start"])
-        if time_span > 100:
+        if _convert_time(event["end"]) - _convert_time(event["start"]) > 100:
             start_cap = _convert_time(event["start"]) // 100 * 100
-            end_cap = start_cap + 100
-            event["multi_timeframe"] = f"{start_cap}-{end_cap}"  # To search for
-            event["border_track"] = event["max_border"] = (
-                end_cap - start_cap
-            ) / 100 - 1
-            multi_hour_events.append(event)
+            end_cap = (
+                int(_convert_time(event["end"]) // 100)
+                + (_convert_time(event["end"]) % 100 > 0)
+            ) * 100
+            next_cap = start_cap + 100
+            # Construct a new dict with the same values to keep these flags separated from actual data
+            # because dict is mutable
+            multi_hour_event = dict(event.items())
+            multi_hour_event["time_caps"] = f"{start_cap}-{next_cap}"  # To search for
+            multi_hour_event["border_track"] = multi_hour_event["max_border"] = (
+                round((end_cap - start_cap) / 100) - 1
+            )
+            multi_hour_events.append(multi_hour_event)
     return multi_hour_events
 
 
@@ -600,6 +611,8 @@ def load_timetable(filename: str) -> list[dict[str, str]]:
         with open(filename, "r") as f:
             lines = f.read().splitlines()
             headers = lines[0].split("\t")
+            if len(headers) != 5:
+                raise ValueError("ERROR! File in wrong format")
             tb: list[dict[str, str]] = []
             for line in lines[1:]:
                 event: dict[str, str] = {}
@@ -614,18 +627,19 @@ def load_timetable(filename: str) -> list[dict[str, str]]:
         raise ValueError(f"ERROR! Cannot load line {i+1}")
 
 
-def save_timetable(timetable: list[dict[str, str]], filename: str) -> None:
+def save_timetable(timetable: list[dict[str, str]], filename: str) -> bool:
     """Save timetable into txt file, separator is \t for each field"""
-    with open(filename, "w", encoding="utf-8") as f:
-        headers = ("title", "day", "start", "end", "location")
-        # Write Headers
-        f.write("\t".join(header + "\n" for header in headers))
+    try:
+        with open(f"{filename}.txt", "w", encoding="utf-8") as f:
+            # Write Headers
+            f.write("\t".join(timetable[0].keys())+'\n')
 
-        # Write data only accepting values whose key match headers
-        for event in timetable:
-            f.write("\t".join(val for key, val in event.items() if key in headers))
-
-
+            # Write data only accepting values whose key match headers
+            for event in timetable[1:]:
+                f.write("\t".join(event.values())+'\n')
+            
+    except Exception as e:
+        raise e
 def sort_timetable(timetable: list[dict[str, str]], days: list[str]) -> None:
     """Sort timetable in place first with days then start time in acensding order
     ### Params
