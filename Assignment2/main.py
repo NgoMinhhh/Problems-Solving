@@ -5,7 +5,8 @@
 # This is my own work as defined by
 #   the University's Academic Misconduct Policy.
 
-#TODO: write display function
+# TODO: write display function
+
 
 def main():
     # Display Author info
@@ -98,11 +99,11 @@ def main():
                 search_choice = input(" - Enter your choie: ")
                 try:
                     match search_choice:
-                        case "0": # Day and Start will result in exactly 1 event or none at all
+                        case "0":  # Day and Start will result in exactly 1 event or none at all
                             search_terms = ask_info(
                                 {"day": "Day: ", "start": "Start time: "}
                             )
-                        case "1" | "2" | "3": # other options will return more than 1 events or none at all
+                        case "1" | "2" | "3":  # other options will return more than 1 events or none at all
                             search_field = search_options[int(search_choice)].split(
                                 " "
                             )[0]
@@ -123,7 +124,7 @@ def main():
                     continue
 
                 # Print out found events
-                sort_timetable(timetable,days)
+                sort_timetable(timetable, days)
                 print_events(events)
 
                 # Finish Find Events. Continue for update/delete event
@@ -137,8 +138,8 @@ def main():
                         event_id = int(input("Choose Event ID: "))
                         old_event = events[event_id]
                         tries = False
-                    except IndexError | ValueError:
-                        print("ERROR! Invalid choice")
+                    except (IndexError, ValueError):
+                        print("ERROR! Invalid choice. Please choose again")
 
                 if menu_choice == "3":  # Delete Event
                     if ask_confirmation("~You are DELETING event~"):
@@ -179,7 +180,6 @@ def main():
                         tries = False
                     else:
                         print("ERROR! Event is in the timeframe of another one")
-
             case "5":  # Print full timetable
                 line_template = "{:5}|{:10}|{:10}|{:10}|{:10}|{:10}|{:10}|{:9}"
                 print(f"{'TIMETABLE':=^80}")
@@ -187,21 +187,24 @@ def main():
                 print_tb_offworks(line_template, timetable, days, mode="before")
                 print_tb_working(line_template, timetable, days)
                 print_tb_offworks(line_template, timetable, days, mode="after")
-            case "6":  # TODO: Export Timetable 
+            case "6":  # TODO: Export Timetable
                 pass
-            case "7": # Import Timetable
+            case "7":  # Import Timetable
                 print("=> Load Timetable data")
-                filename = input(' - Filename: ')
+                filename = input(" - Filename: ")
                 try:
                     staging_tb = load_timetable(filename)
                 except Exception as e:
                     print(e)
                     continue
-                # Check validity of save file    
+                # Check validity of save file
                 if _is_valid(staging_tb):
-                    if ask_confirmation("~You are IMPORTING new timetable. This action will overwrite existing timetable,"):
+                    if ask_confirmation(
+                        """~You are IMPORTING new timetable~\n
+                        ## This action will overwrite existing timetable~"""
+                    ):
                         timetable = staging_tb
-                        sort_timetable(timetable,days)
+                        sort_timetable(timetable, days)
                         print("RESULT: Data load successfully!")
                     else:
                         print("RESULT: Action aborted")
@@ -210,7 +213,9 @@ def main():
             case "8":  # Change Week start day
                 print("=> Change Week Start")
                 print(f"## Current Week Start day is {days[0].upper()}DAY")
-                print(f"0. Cancel\n1. Change to {'Monday' if days[0]== 'Sun' else 'Sunday'}")
+                print(
+                    f"0. Cancel\n1. Change to {'Monday' if days[0]== 'Sun' else 'Sunday'}"
+                )
                 change_choice = input(" - Enter your choice: ")
                 if change_choice == "1":
                     if ask_confirmation("~You are CHANGING Week Start Day~"):
@@ -225,17 +230,17 @@ def main():
                 continue
         print()
 
-def _is_valid(staging_tb:list[dict[str,str]]) -> bool:
+
+def _is_valid(staging_tb: list[dict[str, str]]) -> bool:
     """Check validity of imported timetable"""
     temp_tb = []
     for temp_event in staging_tb:
-        if is_available(temp_tb,temp_event):
+        if is_available(temp_tb, temp_event):
             temp_tb.append(temp_event)
         else:
             return False
     else:
         return True
-            
 
 
 def ask_info(fields: dict[str, str], allow_blank: bool = False) -> dict[str, str]:
@@ -363,7 +368,7 @@ def _convert_time(time: str) -> int:
         elif time[-2:] == "am" and int(hh) == 12:
             hh = 0
         return int(f"{hh}{mm}")
-    except ValueError | IndexError:
+    except (ValueError, IndexError):
         raise ValueError("ERROR! Time not in HH:mm format")
 
 
@@ -443,27 +448,28 @@ def load_timetable(filename: str) -> list[dict[str, str]]:
             headers = lines[0].split("\t")
             tb: list[dict[str, str]] = []
             for line in lines[1:]:
-                event :dict[str, str] = {}
-                event_data = line.split('\t')
+                event: dict[str, str] = {}
+                event_data = line.split("\t")
                 for i in range(len(event_data)):
-                    event[headers[i]] = event_data[i] 
+                    event[headers[i]] = event_data[i]
                 tb.append(event)
         return tb
     except FileNotFoundError:
         raise FileNotFoundError("ERROR! File cannot be found")
     except LookupError:
         raise ValueError(f"ERROR! Cannot load line {i+1}")
-    
+
+
 def save_timetable(timetable: list[dict[str, str]], filename: str) -> None:
     """Save timetable into txt file, separator is \t for each field"""
     with open(filename, "w", encoding="utf-8") as f:
-        headers = ('title','day','start','end','location')
+        headers = ("title", "day", "start", "end", "location")
         # Write Headers
         f.write("\t".join(header + "\n" for header in headers))
 
         # Write data only accepting values whose key match headers
         for event in timetable:
-            f.write('\t'.join(val  for key, val in event.items() if key in headers))
+            f.write("\t".join(val for key, val in event.items() if key in headers))
 
 
 def print_events(events: list[dict[str, str]]) -> None:
@@ -546,7 +552,7 @@ def get_multihour_events(timetable):
             start_cap = _convert_time(event["start"]) // 100 * 100
             end_cap = start_cap + 100
             event["multi_timeframe"] = f"{start_cap}-{end_cap}"  # To search for
-            event["border_track"] = event['max_border'] = round(time_span / 200)
+            event["border_track"] = event["max_border"] = round(time_span / 200)
             multi_hour_events.append(event)
     return multi_hour_events
 
@@ -559,7 +565,7 @@ def print_tb_working(
 
     for i in range(len(work_hours)):
         if i == len(work_hours) - 1:
-            return
+            return                
         line1 = [work_hours[i]]
         line2 = [""]
         bot_border = "-" * 5 + "|"
@@ -585,7 +591,7 @@ def print_tb_working(
 
             if multihour_event:
                 # There is one multi hour event and will have no other events
-                if multihour_event["border_track"] ==  multihour_event["max_border"]:
+                if multihour_event["border_track"] == multihour_event["max_border"]:
                     line1.append("-" + multihour_event["title"][:9])
                     line2.append(multihour_event["location"][:9])
                     bot_border += (
@@ -593,20 +599,19 @@ def print_tb_working(
                         + ".|"
                         or " " * 10
                     )
-                    multihour_event["border_track"] -=1
+                    multihour_event["border_track"] -= 1
                     multihour_event["multi_timeframe"] = f"{end_cap}-{int(end_cap)+100}"
                 elif multihour_event["border_track"] == 0:
                     line1.append("")
                     line2.append("")
                     bot_border += "-" * 10 + "|"
-                elif multihour_event["border_track"] <  multihour_event["max_border"]:
+                elif multihour_event["border_track"] < multihour_event["max_border"]:
                     line1.append("")
                     line2.append("")
                     bot_border += " " * 10 + "|"
-                    multihour_event["border_track"] -=1
+                    multihour_event["border_track"] -= 1
                     multihour_event["multi_timeframe"] = f"{end_cap}-{int(end_cap)+100}"
-                
-                
+
             elif len(one_hour_events) == 1:
                 # There is one event in this timeframe
                 line1.append("-" + one_hour_events[0]["title"][:9])
@@ -645,8 +650,10 @@ def sort_timetable(timetable: list[dict[str, str]], days: list[str]) -> None:
     ### Params
     1. timetable
     2. days: current day list"""
-    ordered_days = {day: i for i, day in enumerate(days)}
-    timetable.sort(key=lambda e: (ordered_days[e["day"]], _convert_time(e["start"])))
+    ordered_days = {day.lower(): i for i, day in enumerate(days)}
+    timetable.sort(
+        key=lambda e: (ordered_days[e["day"].lower()], _convert_time(e["start"]))
+    )
 
 
 if __name__ == "__main__":
