@@ -180,7 +180,7 @@ def main():
                         print("ERROR! Event is in the timeframe of another one")
             case "5":  # Print full timetable
                 # This function requires a sorted timetable
-                sort_timetable(timetable,days)
+                sort_timetable(timetable, days)
                 line_template = "{:5}|{:10}|{:10}|{:10}|{:10}|{:10}|{:10}|{:9}"
                 # Print headers
                 print(line_template.format("", *[day.center(10) for day in days])[:80])
@@ -412,17 +412,9 @@ def print_events(events: list[dict[str, str]]) -> None:
     print("|".join(("-" * 4, "-" * 24, "-" * 5, "-" * 9, "-" * 9, "-" * 24)))
 
 
-
-
-
-
-
-
-
-
 def _convert_time(time: str) -> int:
     """Convert time formatted as HH:mm am/pm into int for numeric comparison
-    ### Return 
+    ### Return
     - 24h numeric
     ### Exception
     - Raise ValueError if invalid format"""
@@ -510,7 +502,7 @@ def save_timetable(timetable: list[dict[str, str]], filename: str) -> bool:
             # Write data only accepting values whose key match headers
             for event in timetable[1:]:
                 f.write("\t".join(event.values()) + "\n")
-
+        return True
     except Exception as e:
         raise e
 
@@ -544,7 +536,8 @@ def shorten_info(field: str, value: str, max_width: int = 9) -> str:
         case "time":
             start, end = value.split("-")
             result = shorten_info("start", start) + "-" + shorten_info("end", end)
-
+        case _:
+            result = ""
     return result
 
 
