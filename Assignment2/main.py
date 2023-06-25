@@ -179,12 +179,15 @@ def main():
                     else:
                         print("ERROR! Event is in the timeframe of another one")
             case "5":  # Print full timetable
+                # This function requires a sorted timetable
+                sort_timetable(timetable,days)
                 line_template = "{:5}|{:10}|{:10}|{:10}|{:10}|{:10}|{:10}|{:9}"
                 # Print headers
                 print(line_template.format("", *[day.center(10) for day in days])[:80])
                 # Headers border
                 print(line_template.format(*["-" * 5] + ["-" * 10] * 8)[:80])
-                tb_arrays = constuct_timetable_arrays(timetable, line_template, days)
+
+                tb_arrays = constuct_timetable_arrays(timetable, days)
                 for row in tb_arrays[:-1]:  # Dismiss last row as border
                     print(line_template.format(*row)[:80])
 
@@ -239,7 +242,7 @@ def main():
 
 
 def ask_confirmation(prompt: str) -> bool:
-    """Ask user for confirmation, return True/False"""
+    """Init a While Loop to ask user for confirmation, only return if input is 'y' or 'n'"""
     while True:
         answer = input(f"{prompt}\n - Confirm ? (y/n): ").lower()
         if answer == "y":
@@ -254,7 +257,7 @@ def ask_info(fields: dict[str, str], allow_blank: bool = False) -> dict[str, str
     """Encapsulation for all ask for input and validation features
     ### Params
     1. fields:
-        - key: for field(title, loc, day, etc)
+        - key:  field(title, loc, day, etc)
         - value: prompt for input
     2. allow_blank:
         - flag allowing blank for values
@@ -353,7 +356,11 @@ def is_available(timetable: list[dict[str, str]], new_event: dict[str, str]) -> 
 
 
 def parse_time(time: str) -> str:
-    """Parse time to HH:mmAM/PM format"""
+    """Parse time to HH:mmAM/PM format
+    ### Return
+    - e.g 7am -> 7:00am, 10:30PM -> 10:30pm
+    ### Exception
+    - Raise ValueError if invalid format"""
     txt = time.strip()
     # Check for AM/PM
     period = txt[-2:].lower()
@@ -379,7 +386,9 @@ def parse_time(time: str) -> str:
 
 
 def print_events(events: list[dict[str, str]]) -> None:
-    """Print events in table format"""
+    """Print events in table format\n
+    ID | Title | Day | Start | End | Loc\n
+    """
     # Print Header
     print(
         "{:^4}|{:^24}|{:^5}|{:^9}|{:^9}|{:^24}".format(
@@ -391,7 +400,7 @@ def print_events(events: list[dict[str, str]]) -> None:
     for i, event in enumerate(events):
         print(
             "{:^4}|{:24}|{:^5}|{:^9}|{:^9}|{:24}".format(
-                str(i).rjust(2),
+                str(i).center(4),
                 event["title"],
                 event["day"].capitalize(),
                 event["start"],
@@ -403,159 +412,20 @@ def print_events(events: list[dict[str, str]]) -> None:
     print("|".join(("-" * 4, "-" * 24, "-" * 5, "-" * 9, "-" * 9, "-" * 24)))
 
 
-def print_tb_header(days: list[str]) -> None:
-    """Print Header for timetable, including an empty col for time and 7 cols for respective days"""
-    print(" " * 4, "|{:^10}|{:^10}|{:^10}|{:^10}|{:^10}|{:^10}|{:^9}".format(*days))
-    print(("-" * 5 + ("|" + "-" * 10) * 7)[:80])
 
 
-def print_tb_offworks(
-    line_template: str, timetable: list[dict[str, str]], days: list[str], mode: str
-) -> None:
-    """Print offwork events before 9am and after 5pm periods"""
-    line1 = [""]
-    line2 = [""]
-    if mode.lower() == "before":
-        start = "12am"
-        end = "9am"
-    elif mode.lower() == "after":
-        start = "5pm"
-        end = "11:59pm"
-    else:
-        raise ValueError("ERROR! Incorrect mode")
-
-    for day in days:
-        events_2_print = _find_events(timetable, day=day, start=start, end=end)
-        match len(events_2_print):
-            case 0:
-                line1.append("")
-                line2.append("")
-            case 1:
-                line1.append(shorten_info("title", events_2_print[0]["title"]))
-                line2.append(
-                    shorten_info("start", events_2_print[0]["start"])
-                    + "-"
-                    + shorten_info("end", events_2_print[0]["end"])
-                )
-            case 2:
-                line1.append("-" + shorten_info("title", events_2_print[0]["title"]))
-                line2.append("-" + shorten_info("title", events_2_print[1]["title"]))
-            case _:
-                line1.append("-" + shorten_info("title", events_2_print[0]["title"]))
-                line2.append("etc.")
-
-    print(line_template.format(*line1))
-    print(line_template.format(*line2))
-
-    if mode == "before":
-        print(("-" * 5 + ("|" + "-" * 10) * 7)[:80])
 
 
-def print_tb_working(
-    line_template: str, timetable: list[dict[str, str]], days: list[str]
-) -> None:
-    work_hours = ["9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", "5pm"]
-    multihour_events = get_multihour_events(timetable)
-
-    for i in range(len(work_hours)):
-        if i == len(work_hours) - 1:
-            return
-        line1 = [work_hours[i]]
-        line2 = [""]
-        bot_border = ["-" * 5]
-
-        for day in days:
-            one_hour_events = _find_events(
-                timetable, day=day, start=work_hours[i], end=work_hours[i + 1]
-            )
-
-            multihour_event = {}
-            j = len(multihour_events) - 1
-            while j >= 0:
-                start_cap, end_cap = multihour_events[j]["time_caps"].split("-")
-                if (
-                    multihour_events[j]["day"].lower() == day.lower()
-                    and _convert_time(parse_time(work_hours[i])) == int(start_cap)
-                    and _convert_time(parse_time(work_hours[i + 1])) == int(end_cap)
-                ):
-                    multihour_event = multihour_events[j]
-                    j = -1
-                else:
-                    j -= 1
-
-            if multihour_event:
-                # There is one multi hour event and will have no other events
-                if multihour_event["border_track"] == multihour_event["max_border"]:
-                    line1.append(shorten_info("title", multihour_event["title"], 10))
-                    line2.append(
-                        shorten_info("location", multihour_event["location"], 10)
-                    )
-                    bot_border.append(
-                        shorten_info("start", multihour_event["start"])
-                        + "-"
-                        + shorten_info("end", multihour_event["end"])
-                    )
-
-                    multihour_event["border_track"] -= 1
-                    multihour_event["time_caps"] = f"{end_cap}-{int(end_cap)+100}"
-                elif multihour_event["border_track"] == 0:
-                    line1.append("")
-                    line2.append("")
-                    bot_border.append("-" * 10)
-                elif multihour_event["border_track"] < multihour_event["max_border"]:
-                    line1.append("")
-                    line2.append("")
-                    bot_border.append(" " * 10)
-                    multihour_event["border_track"] -= 1
-                    multihour_event["time_caps"] = f"{end_cap}-{int(end_cap)+100}"
-
-            elif len(one_hour_events) == 1:
-                # There is one event in this timeframe
-                line1.append(shorten_info("title", one_hour_events[0]["title"], 10))
-                line2.append(
-                    shorten_info("location", one_hour_events[0]["location"], 10)
-                )
-                bot_border.append("-" * 10)
-            elif len(one_hour_events) == 2:
-                # There are more than 2 events scheduled in this timeframe
-                line1.append("-" + shorten_info("title", one_hour_events[0]["title"]))
-                line2.append("-" + shorten_info("title", one_hour_events[1]["title"]))
-                bot_border.append("-" * 10)
-            else:
-                line1.append("")
-                line2.append("")
-                bot_border.append("-" * 10)
-
-        # Print all output line
-        print(line_template.format(*line1)[:80])
-        print(line_template.format(*line2)[:80])
-        print(line_template.format(*bot_border)[:80])
 
 
-def get_multihour_events(timetable):
-    multi_hour_events = []
-    for event in timetable:
-        # (1359 // 100 + 1) * 100)
-        if _convert_time(event["end"]) - _convert_time(event["start"]) > 100:
-            start_cap = _convert_time(event["start"]) // 100 * 100
-            end_cap = (
-                int(_convert_time(event["end"]) // 100)
-                + (_convert_time(event["end"]) % 100 > 0)
-            ) * 100
-            next_cap = start_cap + 100
-            # Construct a new dict with the same values to keep these flags separated from actual data
-            # because dict is mutable
-            multi_hour_event = dict(event.items())
-            multi_hour_event["time_caps"] = f"{start_cap}-{next_cap}"  # To search for
-            multi_hour_event["border_track"] = multi_hour_event["max_border"] = (
-                round((end_cap - start_cap) / 100) - 1
-            )
-            multi_hour_events.append(multi_hour_event)
-    return multi_hour_events
 
 
 def _convert_time(time: str) -> int:
-    """Convert time formatted as HH:mm am/pm into int for numeric comparison"""
+    """Convert time formatted as HH:mm am/pm into int for numeric comparison
+    ### Return 
+    - 24h numeric
+    ### Exception
+    - Raise ValueError if invalid format"""
     try:
         hh, mm = [t.strip() for t in time[:-2].split(":")]
         if time[-2:] == "pm" and (hh := int(hh)) < 12:
@@ -679,7 +549,7 @@ def shorten_info(field: str, value: str, max_width: int = 9) -> str:
 
 
 def constuct_timetable_arrays(
-    timetable: list[dict[str, str]], line_template: str, days: list[str]
+    timetable: list[dict[str, str]], days: list[str]
 ) -> list[list[str]]:
     hours = ["", "9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", ""]
     tb_arrays: list[list[str]] = []
