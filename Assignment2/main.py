@@ -180,19 +180,22 @@ def main():
                         print("ERROR! Event is in the timeframe of another one")
             case "5":  # Print full timetable
                 line_template = "{:5}|{:10}|{:10}|{:10}|{:10}|{:10}|{:10}|{:9}"
-                print(f"{'TIMETABLE':=^80}")
-                print_tb_header(days)
-                print_tb_offworks(line_template, timetable, days, mode="before")
-                print_tb_working(line_template, timetable, days)
-                print_tb_offworks(line_template, timetable, days, mode="after")
+                # Print headers
+                print(line_template.format("", *[day.center(10) for day in days])[:80])
+                # Headers border
+                print(line_template.format(*["-" * 5] + ["-" * 10] * 8)[:80])
+                tb_arrays = constuct_timetable_arrays(timetable, line_template, days)
+                for row in tb_arrays[:-1]:  # Dismiss last row as border
+                    print(line_template.format(*row)[:80])
+
             case "6":  # Export Timetable
                 print("=> Export Timetable data")
                 print("## File extension is txt. Line separator is tab")
                 filename = input(" - Filename: ")
                 try:
-                    save_timetable(timetable,filename)
+                    save_timetable(timetable, filename)
                 except Exception as e:
-                    print('ERROR!',e)
+                    print("ERROR!", e)
             case "7":  # Import Timetable
                 print("=> Import Timetable data")
                 print("## File extension must be txt. Line separator must be tab")
@@ -632,14 +635,16 @@ def save_timetable(timetable: list[dict[str, str]], filename: str) -> bool:
     try:
         with open(f"{filename}.txt", "w", encoding="utf-8") as f:
             # Write Headers
-            f.write("\t".join(timetable[0].keys())+'\n')
+            f.write("\t".join(timetable[0].keys()) + "\n")
 
             # Write data only accepting values whose key match headers
             for event in timetable[1:]:
-                f.write("\t".join(event.values())+'\n')
-            
+                f.write("\t".join(event.values()) + "\n")
+
     except Exception as e:
         raise e
+
+
 def sort_timetable(timetable: list[dict[str, str]], days: list[str]) -> None:
     """Sort timetable in place first with days then start time in acensding order
     ### Params
@@ -666,11 +671,86 @@ def shorten_info(field: str, value: str, max_width: int = 9) -> str:
                 result += f":{mm}"
             if field == "end":  # add period (am/pm) if its end time
                 result += f"{value[-2:]}"
-        case 'time':
-            start, end = value.split('-')
-            result = shorten_info('start',start) + '-' + shorten_info('end',end)
-            
+        case "time":
+            start, end = value.split("-")
+            result = shorten_info("start", start) + "-" + shorten_info("end", end)
+
     return result
+
+
+def constuct_timetable_arrays(
+    timetable: list[dict[str, str]], line_template: str, days: list[str]
+) -> list[list[str]]:
+    hours = ["", "9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", ""]
+    tb_arrays: list[list[str]] = []
+
+    # An hour col with int values for hour for comparison and retrieving index from rounded time
+    int_hour_col = []
+    # Construct row arrays
+    for hh in hours:
+        row = [hh]  # each row starts with hour
+        row.extend(
+            [""] * len(days)
+        )  # populate array with empty str which match cols number (7 days = 7 cols)
+        tb_arrays.append(row)
+        tb_arrays.append([""] * 8)  # create an empty row for each timeframe
+        tb_arrays.extend([["-" * 5] + ["-" * 10] * 8])  # additional row for border
+        int_hour_col.extend([_convert_time(parse_time(hh)) if hh else "", "", "-"])
+
+    # Loop through events to populate arrays
+    for event in timetable:
+        # Rounded start and end time to match with row value
+        rounded_start = _convert_time(event["start"]) // 100 * 100
+        rounded_end = round(_convert_time(event["end"]) / 100) * 100
+        # Get col index based on days list
+        # +1 to account for h-cols
+        col = days.index(event["day"].capitalize()) + 1
+
+        if rounded_start < 900 or rounded_start > 1700:  # Before Work Hours
+            row = 0 if rounded_start < 900 else -3  # First row or last row
+            if not tb_arrays[row][col]:  # There is no event
+                tb_arrays[row][col] = shorten_info("title", event["title"], 10)
+                tb_arrays[row + 1][col] = shorten_info(
+                    "time", f'{event["start"]}-{event["end"]}'
+                )
+            elif not tb_arrays[row + 1][col]:  # There is 1 event already
+                tb_arrays[row + 1][col] = shorten_info("title", event["title"], 10)
+            else:  # More than 2 events
+                tb_arrays[row + 1][col] = ".etc"
+        else:  # rounded_start <= 1600:  # Work hours
+            row = int_hour_col.index(rounded_start)  # match first row of timeframe
+            time_span = rounded_end - rounded_start
+            if time_span <= 100:  # Short event
+                if not tb_arrays[row][col]:  # There is no event
+                    tb_arrays[row][col] = shorten_info("title", event["title"], 10)
+                    tb_arrays[row + 1][col] = shorten_info(
+                        "location", event["location"], 10
+                    )
+                elif not tb_arrays[row + 1][col]:  # There is 1 event already
+                    tb_arrays[row + 1][col] = shorten_info("title", event["title"], 10)
+                else:  # More than 2 events
+                    tb_arrays[row + 1][col] = ".etc"
+            else:
+                tb_arrays[row][col] = shorten_info("title", event["title"], 10)
+                tb_arrays[row + 1][col] = shorten_info(
+                    "location", event["location"], 10
+                )
+                tb_arrays[row + 2][col] = shorten_info(
+                    "time", f'{event["start"]}-{event["end"]}'
+                )
+                # Border delete tracker
+                max_border = round((time_span) / 100) - 1
+                i = 1
+                while i < max_border:
+                    if (border := rounded_start + i * 100) > rounded_end:
+                        i = max_border
+                    tb_arrays[int_hour_col.index(border) + 2][col] = " " * 10
+                    i += 1
+                # for i in range(1,max_border):
+                #     if (border:= rounded_start + i*100) > rounded_end:
+                #         break
+                #     tb[h_col.index(border)+2][col] = ' '*10
+    return tb_arrays
 
 
 if __name__ == "__main__":
