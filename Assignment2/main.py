@@ -666,6 +666,10 @@ def shorten_info(field: str, value: str, max_width: int = 9) -> str:
                 result += f":{mm}"
             if field == "end":  # add period (am/pm) if its end time
                 result += f"{value[-2:]}"
+        case 'time':
+            start, end = value.split('-')
+            result = shorten_info('start',start) + '-' + shorten_info('end',end)
+            
     return result
 
 
