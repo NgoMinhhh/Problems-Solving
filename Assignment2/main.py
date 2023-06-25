@@ -196,7 +196,11 @@ def main():
                 print("## File extension is txt. Line separator is tab")
                 filename = input(" - Filename: ")
                 try:
-                    save_timetable(timetable, filename)
+                    if ask_confirmation("~You are EXPORTING timetable~"):
+                        save_timetable(timetable, filename)
+                        print("RESULT: Data exported successfully!")
+                    else:
+                        print("RESULT: Action aborted")
                 except Exception as e:
                     print("ERROR!", e)
             case "7":  # Import Timetable
@@ -215,7 +219,7 @@ def main():
                     ):
                         timetable = staging_tb
                         sort_timetable(timetable, days)
-                        print("RESULT: Data load successfully!")
+                        print("RESULT: Data imported successfully!")
                     else:
                         print("RESULT: Action aborted")
                 else:
